@@ -4,10 +4,32 @@ Centralized configuration for texture processing and MaterialX creation
 """
 import re
 
+
+
 # Supported texture file extensions
 TEXTURE_EXT = {
     ".jpg", ".jpeg", ".png", ".tga", ".bmp", ".tiff", ".tif", 
     ".exr", ".hdr", ".hdri", ".dpx", ".pic", ".rat", ".tx"
+}
+
+SKIP_KEYS = {'UDIM', 'Size', 'FOLDER_PATH', 'normal', 'bump'}
+
+
+NAMING_MAP = {
+    'color': {'input': 'base_color', 'label': 'basecolor_tex'},
+    'metal': {'input': 'metalness', 'label': 'metalness_tex'},
+    'rough': {'input': 'specular_roughness', 'label': 'roughness_tex'},
+    'specular': {'input': 'specular', 'label': 'specular_tex'},
+    'gloss': {'input': 'specular_roughness', 'label': 'gloss_tex'},
+    'emission': {'input': 'emission', 'label': 'emission_tex'},
+    'alpha': {'input': 'opacity', 'label': 'opacity_tex'},
+    'transmission': {'input': 'transmission', 'label': 'transmission_tex'},
+    'sss': {'input': 'subsurface_color', 'label': 'sss_tex'},
+    'displacement': {'input': None, 'label': 'displacement_tex'},
+    'normal': {'input': None, 'label': 'normal_tex'},
+    'bump': {'input': None, 'label': 'bump_tex'},
+    'ao': {'input': None, 'label': 'ao_tex'},
+    'mask': {'input': None, 'label': 'mask_tex'},
 }
 
 # Texture type mappings with priorities and detection patterns
