@@ -10,47 +10,34 @@ from typing import List, Type
 from pxr import Usd,UsdGeom
 from modules.misc_utils import _sanitize, slugify, MaterialNamingConfig
 from tools.lops_asset_builder_v3.asset_builder_ui import AssetMaterialVariantsDialog, ProgressReporter
-from tools.lops_asset_builder_v3.material_validator import validate_and_warn_user
+from tools.lops_asset_builder_v3.texture_scan_utils import resolve_texture_search_roots
 from PySide6 import QtWidgets, QtCore
 
 
-# Subdirs to skip when recursively scanning for textures (KB3D library layout)
-_TEXTURE_WALK_SKIP = frozenset({'geo', 'Models', 'parts', '.git', '__pycache__'})
-_TEXTURE_RES_PRIORITY = ('png4k', 'png2k', 'jpg4k', 'jpg2k', 'png1k', 'jpg1k', 'exr4k', 'exr2k')
-
-
 def _resolve_texture_search_roots(folder_textures: str) -> list[str]:
-    """Resolve texture scan roots; avoid walking entire KB3D library geo/ trees."""
-    folder = os.path.normpath(folder_textures or "")
-    if not folder or not os.path.isdir(folder):
-        return [folder] if folder else []
-
-    textures_dir = os.path.join(folder, "Textures")
-    if os.path.isdir(textures_dir):
-        for res in _TEXTURE_RES_PRIORITY:
-            candidate = os.path.join(textures_dir, res)
-            if os.path.isdir(candidate):
-                return [candidate]
-        return [textures_dir]
-
-    if os.path.basename(folder).lower() == "textures":
-        for res in _TEXTURE_RES_PRIORITY:
-            candidate = os.path.join(folder, res)
-            if os.path.isdir(candidate):
-                return [candidate]
-        return [folder]
-
-    basename = os.path.basename(folder).lower()
-    if basename in _TEXTURE_RES_PRIORITY:
-        return [folder]
-
-    return [folder]
+    return resolve_texture_search_roots(folder_textures)
 
 
 def _make_texture_scanner(naming_config: MaterialNamingConfig | None = None):
     """Headless texture scanner for pipeline builds (no Qt main window)."""
     from tools.material_tools.TexToMtlX_V2.tex_to_mtlx import TextureFolderScanner
     return TextureFolderScanner(naming_config)
+
+
+def _cook_lop_for_stage(node: hou.Node, progress: ProgressReporter | None = None) -> bool:
+    """Cook a LOP node and return True when a USD stage is available."""
+    if node is None:
+        return False
+    try:
+        if progress:
+            progress.log(f"Cooking {node.path()} for USD stage…")
+        node.cook(force=True)
+        stage = node.stage()
+        return stage is not None
+    except Exception as exc:
+        if progress:
+            progress.log(f"Cook failed for {node.path()}: {exc}")
+        return False
 
 
 # UI components moved to asset_builder_ui.py: SimpleProgressDialog
@@ -93,59 +80,66 @@ def create_component_builder(selected_directory=None):
     enable_env_lights = bool(ui.get("enable_env_lights", False))
     env_light_paths = ui.get("env_light_paths") or []
 
-    # 3) Now start progress and logging UI, after OK
+    # 3) Validate before progress UI (geo load + Qt progress open crashes H22)
+    hou.ui.setStatusMessage("LOPS Asset Builder: validating inputs and materials…")
+    try:
+        if not (main_asset_file_path and os.path.isfile(main_asset_file_path)):
+            hou.ui.displayMessage(
+                "Invalid main asset file path.",
+                severity=hou.severityType.Error,
+                title="LOPS Asset Builder",
+            )
+            return
+        if not (folder_textures and os.path.isdir(folder_textures)):
+            hou.ui.displayMessage(
+                "Invalid main textures folder path.",
+                severity=hou.severityType.Error,
+                title="LOPS Asset Builder",
+            )
+            return
+
+        from tools.lops_asset_builder_v3.material_validator import validate_and_warn_user
+
+        naming_config = MaterialNamingConfig.from_ui(lowercase=lowercase_material_names)
+        all_asset_paths = [main_asset_file_path] + asset_variants
+        validation_result, user_continues = validate_and_warn_user(
+            asset_paths=all_asset_paths,
+            texture_folder=folder_textures,
+            texture_variants=[os.path.basename(v) for v in mtl_variants] if mtl_variants else None,
+            show_dialog=True,
+            naming_config=naming_config,
+            skip_geometry_scan=False,
+        )
+        if not user_continues:
+            return
+    finally:
+        hou.ui.setStatusMessage("")
+
+    # 4) Start progress UI only after validation completes
     progress = ProgressReporter("LOPs Asset Builder v3")
-    # Material creation alone may consume ~800 steps; match CLI budget.
     progress.set_total(1000)
     try:
-            progress.step("Validating inputs")
-            # Inputs were already validated by the dialog's accept(); these are just safety checks with logging
-            if not (main_asset_file_path and os.path.isfile(main_asset_file_path)):
-                progress.log("Error: invalid main asset file.")
-                progress.mark_finished("Error: invalid main asset file.")
-                return
-            if not (folder_textures and os.path.isdir(folder_textures)):
-                progress.log("Error: invalid texture folder.")
-                progress.mark_finished("Error: invalid texture folder.")
-                return
-
-            # Validate materials before building
-            progress.step("Validating materials")
-            # Create unified naming config for validation
-            naming_config = MaterialNamingConfig.from_ui(lowercase=lowercase_material_names)
-            all_asset_paths = [main_asset_file_path] + asset_variants
-            validation_result, user_continues = validate_and_warn_user(
-                asset_paths=all_asset_paths,
-                texture_folder=folder_textures,
-                texture_variants=[os.path.basename(v) for v in mtl_variants] if mtl_variants else None,
-                show_dialog=True,
-                naming_config=naming_config
-            )
-
-            # Log validation results
+            progress.log("Input paths validated.")
             if validation_result.materials_missing:
-                progress.log(f"⚠️ Warning: {len(validation_result.materials_missing)} material(s) have no matching textures")
+                progress.log(
+                    f"Warning: {len(validation_result.materials_missing)} material(s) have no matching textures"
+                )
                 for mat in sorted(validation_result.materials_missing):
                     progress.log(f"  Missing: {mat}")
                 progress.log("Missing materials will use fallback template shaders")
+            elif validation_result.materials_expected:
+                progress.log(
+                    f"All {len(validation_result.materials_expected)} material(s) validated successfully"
+                )
             else:
-                progress.log(f"✓ All {len(validation_result.materials_expected)} material(s) validated successfully")
-
-            if not user_continues:
-                progress.log("Build cancelled by user")
-                progress.mark_finished("Cancelled by user")
-                return
-
-            # Define context
-            stage_context = hou.node("/stage")
-            # Yield to UI and allow cancel after obtaining stage context
-            if progress.is_cancelled():
-                raise KeyboardInterrupt("Cancelled by user")
-            # Determine stage node name from UI or fallback logic
-            node_name = asset_name_input
+                progress.log("No material assignments in geometry; template materials will be used.")
 
             progress.step("Building geometry and material variants")
-            # Reuse the same naming_config from validation for consistency
+            # Define context
+            stage_context = hou.node("/stage")
+            if progress.is_cancelled():
+                raise KeyboardInterrupt("Cancelled by user")
+            node_name = asset_name_input
             geometry_variants_node, comp_out, nodes_to_layout, comp_material_last = build_geo_and_mtl_variants(
                 stage_context=stage_context,
                 node_name=node_name,
@@ -158,6 +152,7 @@ def create_component_builder(selected_directory=None):
                 mtl_vset_name=mtl_vset_name,
                 progress=progress,
                 lowercase_material_names=lowercase_material_names,
+                expected_material_names=sorted(validation_result.materials_expected),
             )
 
             # Yield to UI between heavy build phases
@@ -179,8 +174,11 @@ def create_component_builder(selected_directory=None):
 
             # If lookdev is disabled, stop here as requested
             if not create_lookdev:
-                progress.log("Lookdev setup disabled; finished base setup.")
-                progress.mark_finished("Done")
+                progress.log(
+                    "Lookdev setup was not created (unchecked in dialog). "
+                    "Enable 'Create Lookdev Setup' to build turntable, camera, and Karma nodes."
+                )
+                progress.mark_finished("Done (asset only, no lookdev)")
                 return
 
             progress.step("Creating lookdev scope and graft stages")
@@ -200,36 +198,43 @@ def create_component_builder(selected_directory=None):
             current_stream = graftstage_asset_node
             if create_light_rig:
                 progress.step("Building light rig")
-                # Give UI a chance before heavy light rig creation
                 if progress.is_cancelled():
                     raise KeyboardInterrupt("Cancelled by user")
                 from tools import lops_light_rig
-                # Create grafstages node lights
-                graftstage_lights_node = stage_context.createNode("graftstages", "graftstage_lights_rig")
-                graftstage_lights_node.parm("primpath").set("/turntable/")
-                graftstage_lights_node.parm("destpath").set("/")
-                graftstage_lights_node.setInput(0,current_stream)
 
-                # Create light rig
-                light_rig_nodes_to_layout,light_mixer = lops_light_rig.create_three_point_light(selected_node=comp_out)
-                # Allow user interaction after light rig creation
-                if progress.is_cancelled():
-                    raise KeyboardInterrupt("Cancelled by user")
+                if not _cook_lop_for_stage(comp_out, progress):
+                    progress.log(
+                        "Skipping light rig: component output has no cooked USD stage yet."
+                    )
+                else:
+                    try:
+                        light_rig_nodes_to_layout, light_mixer = lops_light_rig.create_three_point_light(
+                            selected_node=comp_out
+                        )
+                    except Exception as exc:
+                        progress.log(f"Skipping light rig: {exc}")
+                        light_rig_nodes_to_layout = None
+                        light_mixer = None
 
-                # Light Rig Nodes to layout
-                create_organized_net_note("Light Rig", light_rig_nodes_to_layout, hou.Vector2(5, 10))
-
-                # Hook grafstages light to lightmixer
-                graftstage_lights_node.setInput(1,light_mixer)
-
-                # Create switch to activate and deactivate lights
-                switch_lights_rig_node = stage_context.createNode("switch", "switch_lights_rig")
-                switch_lights_rig_node.setInput(0,current_stream)
-                switch_lights_rig_node.setInput(1,graftstage_lights_node)
-                switch_lights_rig_node.parm("input").set(1)
-                lookdev_setup_layout.extend([switch_lights_rig_node,graftstage_lights_node])
-
-                current_stream = switch_lights_rig_node
+                    if light_rig_nodes_to_layout and light_mixer:
+                        graftstage_lights_node = stage_context.createNode("graftstages", "graftstage_lights_rig")
+                        graftstage_lights_node.parm("primpath").set("/turntable/")
+                        graftstage_lights_node.parm("destpath").set("/")
+                        graftstage_lights_node.setInput(0, current_stream)
+                        if progress.is_cancelled():
+                            raise KeyboardInterrupt("Cancelled by user")
+                        create_organized_net_note("Light Rig", light_rig_nodes_to_layout, hou.Vector2(5, 10))
+                        graftstage_lights_node.setInput(1, light_mixer)
+                        switch_lights_rig_node = stage_context.createNode("switch", "switch_lights_rig")
+                        switch_lights_rig_node.setInput(0, current_stream)
+                        switch_lights_rig_node.setInput(1, graftstage_lights_node)
+                        switch_lights_rig_node.parm("input").set(1)
+                        lookdev_setup_layout.extend([switch_lights_rig_node, graftstage_lights_node])
+                        current_stream = switch_lights_rig_node
+                    else:
+                        progress.log(
+                            "Light rig skipped; lookdev/camera/render will still be created."
+                        )
 
 
             # Environment lights branch (optional)
@@ -328,10 +333,23 @@ def create_component_builder(selected_directory=None):
         progress.log(str(e))
         progress.mark_finished("Cancelled.")
     except Exception as e:
-        # Use print instead of UI message to allow non-interactive operation
-        print(f"Error: An error happened in create component builder: {str(e)}")
-        progress.log(f"Error: {str(e)}")
+        err = f"Error: An error happened in create component builder: {str(e)}"
+        print(err)
+        progress.log(err)
         progress.mark_finished("Error.")
+        try:
+            hou.ui.displayMessage(
+                str(e),
+                severity=hou.severityType.Error,
+                title="LOPS Asset Builder — Build Failed",
+            )
+        except Exception:
+            pass
+        try:
+            if progress._use_qt and progress._dialog is not None:
+                progress._dialog.present()
+        except Exception:
+            pass
 
 def _create_inital_nodes(stage_context, node_name: str = "asset_builder"):
     from tools.lops_asset_builder_v3.component_material_custom import build_component_material_custom
@@ -520,10 +538,6 @@ def create_camera_lookdev(parent,asset_name):
     code = f'''
 from tools import lops_lookdev_camera
 
-import importlib
-
-importlib.reload(lops_lookdev_camera)
-
 lops_lookdev_camera.create_lookdev_camera("{asset_name}")
 '''
     # Prepare the Sim setup
@@ -554,77 +568,14 @@ def create_karma_nodes(parent):
 
 def _create_convex(parent):
     '''
-    Creates the Python sop node that is used to create a convex hull using Scipy
+    Creates convex hull geometry for the sim proxy output using native SOPs (no scipy).
     Args:
         parent = the component geometry node where the file is imported
     Return:
-        python_sop = python_sop node created
+        convex_sop = convex hull node created
     '''
-    # Create the extra parms to use
-    python_sop = parent.createNode("python", "convex_hull_setup")
-
-    # Create the extra parms to use
-    ptg = python_sop.parmTemplateGroup()
-
-    # Normalize normals toggle
-    normalize_toggle = hou.ToggleParmTemplate(
-        name="normalize",
-        label="Normalize",
-        default_value=True
-    )
-
-    # Invert Normals Toggle
-    flip_normals = hou.ToggleParmTemplate(
-        name="flip_normals",
-        label="Flip Normals",
-        default_value=True
-    )
-
-    # Simplify Toogle
-    simplify_toogle = hou.ToggleParmTemplate(
-        name="simplify",
-        label="Simplify",
-        default_value=True
-    )
-
-    # Level of Detail Float
-    level_detail = hou.FloatParmTemplate(
-        name="level_detail",
-        label="Level Detail",
-        num_components=1,
-        disable_when="{simplify == 0}",
-        max=1
-    )
-
-    # Append to node
-    ptg.append(normalize_toggle)
-    ptg.append(flip_normals)
-    ptg.append(simplify_toogle)
-    ptg.append(level_detail)
-
-    python_sop.setParmTemplateGroup(ptg)
-
-    code = '''
-from modules import convex_hull_utils
-
-node = hou.pwd()
-geo = node.geometry()
-
-# Get user parms
-normalize_parm = node.parm("normalize")
-flip_normals_parm = node.parm("flip_normals")
-simplify_parm = node.parm("simplify")
-level_detail = node.parm("level_detail").eval()
-
-# Get the points
-points = [point.position() for point in geo.points()]
-
-convex_hull_utils.create_convex_hull(geo, points, normalize_parm,flip_normals_parm, simplify_parm, level_detail)
-'''
-    # Prepare the Sim setup
-    python_sop.parm("python").set(code)
-
-    return python_sop
+    convex_sop = parent.createNode("convexdecomposition", "convex_hull_setup")
+    return convex_sop
 
 def _create_mtlx_templates(parent, material_lib):
     stage = parent.stage()
@@ -701,11 +652,8 @@ def _create_materials(parent, folder_textures, material_lib, expected_names=None
         for search_root in search_roots:
             if not search_root or not os.path.isdir(search_root):
                 continue
-            for root, dirs, files in os.walk(search_root):
-                dirs[:] = [
-                    d for d in dirs
-                    if d not in _TEXTURE_WALK_SKIP and not d.startswith('.')
-                ]
+            from tools.lops_asset_builder_v3.texture_scan_utils import walk_texture_dirs
+            for root, dirs, files in walk_texture_dirs(search_root):
                 if progress and progress.is_cancelled():
                     raise KeyboardInterrupt("Cancelled by user")
                 current_folder = root.replace(os.sep, "/")
@@ -820,56 +768,9 @@ def _create_materials(parent, folder_textures, material_lib, expected_names=None
         return False
 
 def _extract_material_names(asset_paths, lowercase: bool = False):
-    """
-    Extract material names from geometry files by examining shop_materialpath
-    and material:binding primitive attributes.
-
-    Args:
-        asset_paths (list): List of asset file paths to examine
-        lowercase (bool): If True, convert material names to lowercase
-
-    Returns:
-        list: Sorted list of unique material names (basenames only)
-    """
-    material_names = set()
-
-    for asset_path in asset_paths:
-        asset_path = asset_path.strip()
-        if not asset_path:
-            continue
-
-        try:
-            # Load geometry in memory
-            geo = hou.Geometry()
-            geo.loadFromFile(asset_path)
-
-            # Check for shop_materialpath primitive attribute
-            shop_attrib = geo.findPrimAttrib("shop_materialpath")
-            if shop_attrib:
-                for prim in geo.prims():
-                    material_path = prim.stringAttribValue(shop_attrib)
-                    if material_path:
-                        # Extract basename from material path
-                        material_name = slugify(os.path.basename(material_path), lowercase=lowercase)
-                        if material_name:
-                            material_names.add(material_name)
-
-            # Check for material:binding primitive attribute
-            binding_attrib = geo.findPrimAttrib("material:binding")
-            if binding_attrib:
-                for prim in geo.prims():
-                    material_path = prim.stringAttribValue(binding_attrib)
-                    if material_path:
-                        # Extract basename from material path
-                        material_name = os.path.basename(material_path)
-                        if material_name:
-                            material_names.add(material_name)
-
-        except Exception as e:
-            # Skip unreadable files silently
-            continue
-
-    return sorted(list(material_names))
+    """Extract material names from geometry (CLI / headless only — not while Qt progress is open)."""
+    from tools.lops_asset_builder_v3.material_validator import extract_material_names_from_geometry
+    return sorted(extract_material_names_from_geometry(asset_paths, lowercase=lowercase))
 
 
 def extract_material_names_from_assets(asset_paths, lowercase: bool = False):
@@ -930,7 +831,8 @@ def build_geo_and_mtl_variants(stage_context, node_name: str, main_asset_file_pa
                                progress: ProgressReporter | None = None,
                                lowercase_material_names: bool = False,
                                use_custom_component_output: bool = True,
-                               create_geo_variants: bool = True):
+                               create_geo_variants: bool = True,
+                               expected_material_names: list[str] | None = None):
     """
     Build the geometry variants, material variants, and materials, returning
     key nodes for further wiring.
@@ -1025,16 +927,40 @@ def build_geo_and_mtl_variants(stage_context, node_name: str, main_asset_file_pa
             comp_material.setInput(0, comp_material_last)
         comp_material.setInput(1, material_lib)
         comp_material_last = comp_material
-        # Extract material names from ALL geometry variant assets (main + variants)
-        # Ensure asset paths are unique (order-preserving) to avoid repeated processing
-        all_asset_paths = []
-        for a in assets:
-            all_asset_paths.append(a)
-        material_names = _extract_material_names(all_asset_paths, lowercase=naming_config.lowercase)
-        readable_list = "\n".join(f"- {m}" for m in material_names)
-        progress.log(f"Found {len(material_names)} Materials across all geometry{'variants' if has_geo_variants else ''} (from {len(all_asset_paths)} unique asset{'s' if len(all_asset_paths) > 1 else ''}):\n{readable_list}")
+        # Material names must be resolved before the Qt progress dialog opens (loadFromFile +
+        # Qt repaint hard-crashes Houdini 22). GUI passes pre-validated names; CLI extracts here.
+        if expected_material_names is not None:
+            material_names = list(expected_material_names)
+        else:
+            all_asset_paths = list(assets)
+            if progress and hasattr(progress, "suspend_events"):
+                with progress.suspend_events():
+                    material_names = _extract_material_names(
+                        all_asset_paths, lowercase=naming_config.lowercase
+                    )
+            else:
+                material_names = _extract_material_names(
+                    all_asset_paths, lowercase=naming_config.lowercase
+                )
+        if progress:
+            if material_names:
+                readable_list = "\n".join(f"- {m}" for m in material_names)
+                progress.log(
+                    f"Using {len(material_names)} material name(s) from geometry:\n{readable_list}"
+                )
+            else:
+                progress.log(
+                    "No geometry material names; creating materials discovered from textures."
+                )
         # Create the materials using the text_to_mtlx script with targeted material creation
-        _create_materials(first_geo_node, mtl_folder, material_lib, material_names, progress=progress, naming_config=naming_config)  # Use first_geo_node
+        _create_materials(
+            first_geo_node,
+            mtl_folder,
+            material_lib,
+            material_names or None,
+            progress=progress,
+            naming_config=naming_config,
+        )
         nodes_to_layout.append(material_lib)
         nodes_to_layout.append(comp_material)
 

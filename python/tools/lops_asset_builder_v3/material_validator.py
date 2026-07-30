@@ -6,12 +6,92 @@ by the available texture folders, and provides detailed warnings to users.
 """
 
 import os
-from typing import List, Dict, Set, Tuple
+from typing import List, Set, Tuple
+
 import hou
-from PySide6 import QtWidgets
 from modules.misc_utils import slugify, MaterialNamingConfig
 from tools.lops_asset_builder_v3.texture_variant_detector import TextureVariantDetector
-from ui.houdini_theme import HoudiniTheme
+from tools.lops_asset_builder_v3.texture_scan_utils import (
+    resolve_texture_search_roots,
+    walk_texture_dirs,
+)
+
+# Formats safe to load with hou.Geometry during pre-build validation
+_HOU_GEOMETRY_EXTENSIONS = frozenset({
+    ".bgeo", ".bgeo.sc", ".obj", ".ply", ".stl", ".off", ".dxf",
+})
+_USD_EXTENSIONS = frozenset({".usd", ".usda", ".usdc"})
+# Skip in-memory geometry loads above this size during pre-flight validation
+_MAX_VALIDATION_GEO_BYTES = 256 * 1024 * 1024
+
+
+def _asset_extension(asset_path: str) -> str:
+    lower = asset_path.lower()
+    if lower.endswith(".bgeo.sc"):
+        return ".bgeo.sc"
+    return os.path.splitext(lower)[1]
+
+
+def _normalize_material_name(material_path: str, lowercase: bool) -> str:
+    material_name = os.path.basename(material_path or "")
+    if not material_name:
+        return ""
+    if lowercase:
+        material_name = material_name.lower().replace(" ", "_")
+    else:
+        material_name = material_name.replace(" ", "_")
+    material_name = slugify(material_name, lowercase=lowercase).strip("_")
+    return material_name
+
+
+def _extract_materials_from_hou_geometry(asset_path: str, lowercase: bool) -> Set[str]:
+    material_names: Set[str] = set()
+    geo = hou.Geometry()
+    geo.loadFromFile(asset_path)
+
+    shop_attrib = geo.findPrimAttrib("shop_materialpath")
+    if shop_attrib:
+        for prim in geo.prims():
+            material_path = prim.stringAttribValue(shop_attrib)
+            material_name = _normalize_material_name(material_path, lowercase)
+            if material_name:
+                material_names.add(material_name)
+
+    binding_attrib = geo.findPrimAttrib("material:binding")
+    if binding_attrib:
+        for prim in geo.prims():
+            material_path = prim.stringAttribValue(binding_attrib)
+            material_name = _normalize_material_name(material_path, lowercase)
+            if material_name:
+                material_names.add(material_name)
+
+    return material_names
+
+
+def _extract_materials_from_usd(asset_path: str, lowercase: bool) -> Set[str]:
+    material_names: Set[str] = set()
+    try:
+        from pxr import Usd, UsdShade
+    except ImportError:
+        return material_names
+
+    stage = Usd.Stage.Open(asset_path)
+    if not stage:
+        return material_names
+
+    for prim in stage.Traverse():
+        if not prim.IsValid():
+            continue
+        binding_api = UsdShade.MaterialBindingAPI(prim)
+        if not binding_api:
+            continue
+        material, _relationship = binding_api.ComputeBoundMaterial()
+        if material:
+            material_name = _normalize_material_name(material.GetPath().path.split("/")[-1], lowercase)
+            if material_name:
+                material_names.add(material_name)
+
+    return material_names
 
 
 class MaterialValidationResult:
@@ -105,125 +185,48 @@ class MaterialValidationResult:
 
 
 def extract_material_names_from_geometry(asset_paths: List[str], lowercase: bool = False) -> Set[str]:
-    """
-    Extract material names from geometry files.
-
-    Args:
-        asset_paths: List of geometry file paths
-        lowercase: If True, convert material names to lowercase
-
-    Returns:
-        Set of material names found in geometry
-    """
-    material_names = set()
+    """Extract material names from geometry files without unsafe loaders."""
+    material_names: Set[str] = set()
 
     for asset_path in asset_paths:
         asset_path = asset_path.strip()
         if not asset_path or not os.path.exists(asset_path):
             continue
 
+        ext = _asset_extension(asset_path)
         try:
-            # Load geometry
-            geo = hou.Geometry()
-            geo.loadFromFile(asset_path)
-
-            # Check shop_materialpath
-            shop_attrib = geo.findPrimAttrib("shop_materialpath")
-            if shop_attrib:
-                for prim in geo.prims():
-                    material_path = prim.stringAttribValue(shop_attrib)
-                    if material_path:
-                        # Extract and clean material name
-                        material_name = os.path.basename(material_path)
-                        if lowercase:
-                            material_name = material_name.lower().replace(" ", "_")
-                        else:
-                            material_name = material_name.replace(" ", "_")
-                        material_name = slugify(material_name, lowercase=lowercase)
-                        material_name = material_name.strip("_")  # Remove trailing underscores
-                        if material_name:
-                            material_names.add(material_name)
-
-            # Check material:binding
-            binding_attrib = geo.findPrimAttrib("material:binding")
-            if binding_attrib:
-                for prim in geo.prims():
-                    material_path = prim.stringAttribValue(binding_attrib)
-                    if material_path:
-                        material_name = os.path.basename(material_path)
-                        if lowercase:
-                            material_name = material_name.lower().replace(" ", "_")
-                        else:
-                            material_name = material_name.replace(" ", "_")
-                        material_name = slugify(material_name, lowercase=lowercase)
-                        material_name = material_name.strip("_")
-                        if material_name:
-                            material_names.add(material_name)
-
-        except Exception as e:
-            # Skip files that can't be read
+            if ext in _HOU_GEOMETRY_EXTENSIONS:
+                if os.path.getsize(asset_path) > _MAX_VALIDATION_GEO_BYTES:
+                    continue
+                material_names.update(_extract_materials_from_hou_geometry(asset_path, lowercase))
+            elif ext in _USD_EXTENSIONS:
+                material_names.update(_extract_materials_from_usd(asset_path, lowercase))
+        except Exception:
             continue
 
     return material_names
 
 
 def find_available_materials_in_textures(texture_folder: str, lowercase: bool = False) -> Set[str]:
-    """
-    Scan texture folder to find available material sets.
-
-    A material set is identified by finding texture files with common prefixes.
-
-    Args:
-        texture_folder: Path to texture folder
-        lowercase: If True, convert material names to lowercase
-
-    Returns:
-        Set of material names that can be created from textures
-    """
-    if not os.path.exists(texture_folder):
+    """Scan texture folders using the same headless scanner as the builder."""
+    if not texture_folder:
         return set()
 
-    material_names = set()
+    from tools.material_tools.TexToMtlX_V2.tex_to_mtlx import TextureFolderScanner
+    from modules.misc_utils import MaterialNamingConfig
 
-    # Texture suffixes that identify material maps
-    texture_suffixes = [
-        'basecolor', 'base_color', 'diffuse', 'albedo',
-        'normal', 'normal_gl', 'normal_dx',
-        'roughness', 'metallic', 'metalness',
-        'ao', 'ambient_occlusion', 'ambientocclusion',
-        'height', 'displacement', 'bump',
-        'opacity', 'alpha', 'transmission',
-        'emission', 'emissive'
-    ]
+    naming_config = MaterialNamingConfig.from_ui(lowercase=lowercase)
+    scanner = TextureFolderScanner(naming_config)
+    material_names: Set[str] = set()
 
-    # Walk through all subdirectories
-    for root, dirs, files in os.walk(texture_folder):
-        texture_files = [f for f in files if f.lower().endswith(('.png', '.jpg', '.jpeg', '.tif', '.tiff', '.exr', '.tx'))]
-
-        if not texture_files:
+    for search_root in resolve_texture_search_roots(texture_folder):
+        if not search_root or not os.path.isdir(search_root):
             continue
-
-        # Extract material names by removing texture suffixes
-        for texture_file in texture_files:
-            if lowercase:
-                basename = os.path.splitext(texture_file)[0].lower()
-            else:
-                basename = os.path.splitext(texture_file)[0]
-
-            # Try to identify material name by removing known suffixes
-            material_name = None
-            for suffix in texture_suffixes:
-                if basename.lower().endswith(f"_{suffix}"):
-                    material_name = basename[:-len(suffix)-1]
-                    break
-                elif basename.lower().endswith(suffix):
-                    material_name = basename[:-len(suffix)]
-                    break
-
-            if material_name:
-                material_name = slugify(material_name, lowercase=lowercase).strip("_")
-                if material_name:
-                    material_names.add(material_name)
+        for root, _dirs, _files in walk_texture_dirs(search_root):
+            if not scanner.folder_with_textures(root):
+                continue
+            details = scanner.get_texture_details(root)
+            material_names.update(details.keys())
 
     return material_names
 
@@ -233,7 +236,8 @@ def validate_materials(
     texture_folder: str,
     texture_variants: List[str] = None,
     lowercase: bool = False,
-    naming_config: MaterialNamingConfig = None
+    naming_config: MaterialNamingConfig = None,
+    skip_geometry_scan: bool = False,
 ) -> MaterialValidationResult:
     """
     Validate that geometry materials can be satisfied by available textures.
@@ -254,13 +258,22 @@ def validate_materials(
 
     result = MaterialValidationResult()
 
-    # Extract expected materials from geometry
-    result.add_info(f"Scanning {len(asset_paths)} geometry file(s)...")
-    result.materials_expected = extract_material_names_from_geometry(asset_paths, lowercase=naming_config.lowercase)
+    # Extract expected materials from geometry (optional — skipped in GUI to avoid
+    # hou.Geometry.loadFromFile before the progress window, which crashes H22).
+    if skip_geometry_scan:
+        result.add_info("Skipping geometry material scan (texture folder validation only)")
+    else:
+        result.add_info(f"Scanning {len(asset_paths)} geometry file(s)...")
+        result.materials_expected = extract_material_names_from_geometry(
+            asset_paths, lowercase=naming_config.lowercase
+        )
 
-    if not result.materials_expected:
-        result.add_warning("No material assignments found in geometry files")
-        result.add_info("Geometry has no shop_materialpath or material:binding attributes")
+        if not result.materials_expected:
+            result.add_info("No material assignments found in geometry files")
+            result.add_info("Geometry has no shop_materialpath or material:binding attributes")
+            # Continue to texture scan — materials may still be created from textures.
+
+    if not skip_geometry_scan and not result.materials_expected:
         return result
 
     # Find available materials in textures
@@ -270,14 +283,22 @@ def validate_materials(
         result.materials_missing = result.materials_expected.copy()
         return result
 
-    # Scan main texture folder
-    result.add_info(f"Scanning texture folder: {texture_folder}")
+    # Scan main texture folder (resolved roots avoid walking geo/ in KB3D libraries)
+    resolved_roots = resolve_texture_search_roots(texture_folder)
+    scan_label = resolved_roots[0] if resolved_roots else texture_folder
+    result.add_info(f"Scanning texture folder: {scan_label}")
     result.materials_available = find_available_materials_in_textures(texture_folder, lowercase=naming_config.lowercase)
 
-    # Intelligently detect variant folders if not provided
+    # Detect variant folders from the Textures parent when rooted at png4k/jpg4k
+    variant_scan_root = texture_folder
+    if resolved_roots:
+        variant_scan_root = os.path.dirname(resolved_roots[0])
+        if os.path.basename(variant_scan_root).lower() != "textures":
+            variant_scan_root = texture_folder
+
     if not texture_variants:
         detector = TextureVariantDetector()
-        detected_variants = detector.detect_variants(texture_folder)
+        detected_variants = detector.detect_variants(variant_scan_root)
         if detected_variants:
             result.add_info(f"Auto-detected {len(detected_variants)} texture variant folder(s)")
             for variant in detected_variants:
@@ -324,7 +345,8 @@ def validate_and_warn_user(
     texture_variants: List[str] = None,
     show_dialog: bool = True,
     lowercase: bool = False,
-    naming_config: MaterialNamingConfig = None
+    naming_config: MaterialNamingConfig = None,
+    skip_geometry_scan: bool = False,
 ) -> Tuple[MaterialValidationResult, bool]:
     """
     Validate materials and optionally show warning dialog to user.
@@ -344,28 +366,38 @@ def validate_and_warn_user(
     if naming_config is None:
         naming_config = MaterialNamingConfig.from_ui(lowercase=lowercase)
 
-    result = validate_materials(asset_paths, texture_folder, texture_variants, naming_config=naming_config)
+    result = validate_materials(
+        asset_paths,
+        texture_folder,
+        texture_variants,
+        naming_config=naming_config,
+        skip_geometry_scan=skip_geometry_scan,
+    )
 
     # Print to console
     print(result.get_summary())
 
-    # Show dialog if requested and there are warnings
+    # Show dialog if requested and there are warnings (native Houdini UI — safe with no Qt progress open)
     if show_dialog and result.has_warnings:
         try:
-            response = HoudiniTheme.themed_message_box(
-                title="Material Validation Warning",
-                text=f"<b>Material validation found {len(result.materials_missing)} missing material(s)</b>",
-                icon=QtWidgets.QMessageBox.Warning,
-                buttons=QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
-                informative_text=(
-                    "Some materials referenced in geometry don't have matching texture files.\n"
-                    "These materials will use fallback template shaders.\n\n"
-                    "Do you want to continue?"
-                ),
-                detailed_text=result.get_summary(),
+            summary = result.get_summary()
+            missing_count = len(result.materials_missing)
+            message = (
+                f"Material validation found {missing_count} missing material(s).\n\n"
+                "Some materials referenced in geometry don't have matching texture files.\n"
+                "These materials will use fallback template shaders.\n\n"
+                "Continue with the build?"
             )
-            user_continues = response == QtWidgets.QMessageBox.Yes
-
+            choice = hou.ui.displayMessage(
+                message,
+                buttons=("Continue", "Cancel"),
+                severity=hou.severityType.Warning,
+                default_choice=0,
+                close_choice=1,
+                help=summary,
+                title="Material Validation Warning",
+            )
+            user_continues = choice == 0
             return result, user_continues
 
         except Exception as e:

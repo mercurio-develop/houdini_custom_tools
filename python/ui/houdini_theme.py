@@ -76,17 +76,83 @@ class HoudiniTheme:
         return cls._COLORS
 
     @classmethod
-    def parent_to_houdini(cls, widget: QtWidgets.QWidget) -> None:
-        """Parent tool windows to the Houdini main window safely (H22-compatible)."""
+    def _main_window(cls) -> QtWidgets.QWidget | None:
         try:
-            main = hou.qt.mainWindow()
+            return hou.qt.mainWindow()
+        except Exception:
+            return None
+
+    @classmethod
+    def parent_to_houdini(cls, widget: QtWidgets.QWidget) -> None:
+        """Parent a floating tool window to Houdini main window (H22-safe).
+
+        Do not change window flags here — reparenting + flag changes on QDialog
+        can hard-crash Houdini 22 / Qt6.
+        """
+        try:
+            main = cls._main_window()
             if main is not None and widget.parent() is None:
                 widget.setParent(main)
-            widget.setWindowFlags(
-                widget.windowFlags() | QtCore.Qt.WindowStaysOnTopHint
-            )
         except Exception:
             pass
+
+    @classmethod
+    def setup_modal_dialog(
+        cls,
+        widget: QtWidgets.QWidget,
+        *,
+        title: str | None = None,
+        min_width: int | None = None,
+        min_height: int | None = None,
+    ) -> None:
+        """Style a modal QDialog that already has hou.qt.mainWindow() as parent."""
+        if title:
+            widget.setWindowTitle(title)
+        widget.setMinimumWidth(min_width or cls.LAYOUT["dialog_min_width"])
+        widget.setMinimumHeight(min_height or cls.LAYOUT["dialog_min_height"])
+        cls.apply(widget)
+
+    @classmethod
+    def center_on_houdini(cls, widget: QtWidgets.QWidget) -> None:
+        """Place a floating tool window over the Houdini main window."""
+        try:
+            main = cls._main_window()
+            if main is None:
+                return
+            main_geo = main.frameGeometry()
+            target = widget.frameGeometry()
+            target.moveCenter(main_geo.center())
+            widget.move(target.topLeft())
+        except Exception:
+            pass
+
+    @classmethod
+    def setup_tool_window(
+        cls,
+        widget: QtWidgets.QWidget,
+        *,
+        title: str | None = None,
+        min_width: int | None = None,
+        min_height: int | None = None,
+    ) -> None:
+        """Configure a non-modal floating progress/tool window."""
+        if title:
+            widget.setWindowTitle(title)
+        widget.setMinimumWidth(min_width or cls.LAYOUT["dialog_min_width"])
+        widget.setMinimumHeight(min_height or cls.LAYOUT["dialog_min_height"])
+        try:
+            # True top-level window — do NOT parent to mainWindow (hides the dialog in H22).
+            flags = (
+                QtCore.Qt.Window
+                | QtCore.Qt.WindowTitleHint
+                | QtCore.Qt.WindowCloseButtonHint
+                | QtCore.Qt.WindowStaysOnTopHint
+            )
+            widget.setWindowFlags(flags)
+        except Exception:
+            pass
+        cls.apply(widget)
+        cls.center_on_houdini(widget)
 
     @classmethod
     def setup_dialog(
@@ -97,12 +163,15 @@ class HoudiniTheme:
         min_width: int | None = None,
         min_height: int | None = None,
     ) -> None:
-        cls.parent_to_houdini(widget)
-        if title:
-            widget.setWindowTitle(title)
-        widget.setMinimumWidth(min_width or cls.LAYOUT["dialog_min_width"])
-        widget.setMinimumHeight(min_height or cls.LAYOUT["dialog_min_height"])
-        cls.apply(widget)
+        """Backward-compatible entry: modal if parent set, else floating tool window."""
+        if widget.parent() is not None:
+            cls.setup_modal_dialog(
+                widget, title=title, min_width=min_width, min_height=min_height
+            )
+        else:
+            cls.setup_tool_window(
+                widget, title=title, min_width=min_width, min_height=min_height
+            )
 
     @classmethod
     def apply(cls, widget: QtWidgets.QWidget) -> None:
@@ -192,7 +261,12 @@ class HoudiniTheme:
 
     @classmethod
     def style_message_box(cls, msg_box: QtWidgets.QMessageBox) -> None:
-        cls.parent_to_houdini(msg_box)
+        try:
+            main = cls._main_window()
+            if main is not None:
+                msg_box.setParent(main)
+        except Exception:
+            pass
         cls.apply(msg_box)
 
     @classmethod

@@ -96,27 +96,32 @@ def calculate_prim_bounds(target_node):
         dict : Contains the bounding box information - min, max, center, size and original bounding box
     '''
 
-    # Get the stage
     stage = target_node.stage()
 
     if not stage:
         print("No USD stage found")
         return None
 
-    # Get the target prim
+    from pxr import Usd, UsdGeom
+
     prim = stage.GetDefaultPrim()
 
     if not prim or not prim.IsValid():
-        print(f"Invalid prim {prim}")
+        # Component outputs often omit defaultPrim — use first boundable prim.
+        for candidate in stage.Traverse():
+            if candidate.IsA(UsdGeom.Boundable):
+                prim = candidate
+                break
+
+    if not prim or not prim.IsValid():
+        print("No valid boundable USD prim found for bounds")
         return None
 
-    # Calculate the bounding box
     bounds = loputils.computePrimWorldBounds(target_node, [prim])
     if bounds is None:
         print(f"Could not compute bounds for prim {prim.GetPath()}")
         return None
 
-    # Extract the bounding box information
     range3d = bounds.GetRange()
     min_point = hou.Vector3(range3d.GetMin())
     max_point = hou.Vector3(range3d.GetMax())
@@ -124,7 +129,7 @@ def calculate_prim_bounds(target_node):
     center = (min_point + max_point) * 0.5
     size = max_point - min_point
 
-    return {"min":min_point, "max":max_point, "center":center, "size":size, "bbox":bounds}
+    return {"min": min_point, "max": max_point, "center": center, "size": size, "bbox": bounds}
 
 def safe_node_name(raw: str) -> str:
     """

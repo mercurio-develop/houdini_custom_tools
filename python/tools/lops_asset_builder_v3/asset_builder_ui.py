@@ -20,6 +20,7 @@ from __future__ import annotations
 from typing import List, Dict
 import os
 
+import hou
 from PySide6 import QtWidgets, QtCore, QtGui
 
 from ui.houdini_theme import HoudiniTheme
@@ -119,7 +120,9 @@ class AssetMaterialVariantsDialog(QtWidgets.QDialog):
 
     def __init__(self, default_asset: str = "", default_maps: str = "", parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
-        HoudiniTheme.setup_dialog(self, title="LOPS Asset Builder", min_width=560, min_height=480)
+        HoudiniTheme.setup_modal_dialog(
+            self, title="LOPS Asset Builder", min_width=560, min_height=480
+        )
         self.setModal(True)
         self._build_ui(default_asset, default_maps)
 
@@ -200,10 +203,9 @@ class AssetMaterialVariantsDialog(QtWidgets.QDialog):
         self.maps_list.btn_add.setToolTip("Add multiple material variant folders at once")
         self.maps_list.btn_add.clicked.connect(self._on_add_multiple_material_folders)
 
-        # Lookdev setup toggle
+        # Lookdev setup toggle (on by default — turntable/camera/render branch)
         self.cb_create_lookdev = QtWidgets.QCheckBox("Create Lookdev Setup")
-        # Disabled by default per request
-        self.cb_create_lookdev.setChecked(False)
+        self.cb_create_lookdev.setChecked(True)
         form.addRow("Lookdev Setup", self.cb_create_lookdev)
 
         # Setup Light Rig toggle
@@ -347,29 +349,28 @@ class AssetMaterialVariantsDialog(QtWidgets.QDialog):
 
 class SimpleProgressDialog(QtWidgets.QDialog):
     def __init__(self, title="LOPs Asset Builder v3", parent=None):
+        if parent is None:
+            try:
+                parent = hou.qt.mainWindow()
+            except Exception:
+                parent = None
         super().__init__(parent)
-        HoudiniTheme.setup_dialog(self, title=title, min_width=700, min_height=640)
+        self.setWindowTitle(title)
+        self.setMinimumWidth(700)
+        self.setMinimumHeight(640)
         self.setModal(False)
+        HoudiniTheme.apply(self)
+        try:
+            self.setWindowFlag(QtCore.Qt.WindowType.WindowStaysOnTopHint, True)
+        except Exception:
+            pass
         # Make the dialog larger by default (about ~25% bigger) and easier to resize while working
         try:
             self.resize(800, 640)
         except Exception:
             pass
-        self.setMinimumWidth(700)
         try:
             self.setSizeGripEnabled(True)
-        except Exception:
-            pass
-        # Remove all title bar control buttons (Close, Minimize, Maximize) reliably across platforms.
-        # Use a clean flag set with only a plain title bar — no system menu and no control buttons.
-        try:
-            clean_flags = QtCore.Qt.Window | QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowTitleHint
-            # Avoid system menu which can re-introduce close/min/max on some WMs
-            try:
-                clean_flags &= ~QtCore.Qt.WindowSystemMenuHint
-            except Exception:
-                pass
-            self.setWindowFlags(clean_flags)
         except Exception:
             pass
         layout = QtWidgets.QVBoxLayout(self)
@@ -425,6 +426,24 @@ class SimpleProgressDialog(QtWidgets.QDialog):
         self._esc_presses = 0
         self.force_kill = False
 
+    def present(self) -> None:
+        """Show and bring the progress window to the front."""
+        try:
+            HoudiniTheme.center_on_houdini(self)
+        except Exception:
+            pass
+        self.show()
+        try:
+            self.setWindowState(
+                (self.windowState() & ~QtCore.Qt.WindowState.WindowMinimized)
+                | QtCore.Qt.WindowState.WindowActive
+            )
+            self.raise_()
+            self.activateWindow()
+        except Exception:
+            pass
+        self.refresh()
+
     def _on_kill(self):
         # Increment ESC press count and escalate actions
         self._esc_presses += 1
@@ -462,32 +481,32 @@ class SimpleProgressDialog(QtWidgets.QDialog):
 
     def set_value(self, value: int):
         self.progress_bar.setValue(max(0, min(int(value), self._max)))
-        QtWidgets.QApplication.processEvents()
 
     def set_message(self, msg: str):
         self.message_label.setText(msg)
-        QtWidgets.QApplication.processEvents()
 
     def log(self, msg: str):
         self.log_edit.append(msg)
-        # Auto-scroll to bottom to keep the latest log visible
         try:
             self.log_edit.moveCursor(QtGui.QTextCursor.End)
         except Exception:
-            # Fallback: ensure cursor visible without hard dependency
             self.log_edit.ensureCursorVisible()
-        QtWidgets.QApplication.processEvents()
+
+    def refresh(self) -> None:
+        try:
+            QtWidgets.QApplication.processEvents(QtCore.QEventLoop.AllEvents, 50)
+        except Exception:
+            pass
 
     def mark_finished(self):
         self.finished = True
-        # Enable Close button so the user can dismiss after reading logs
         try:
             self.close_btn.setEnabled(True)
             self.close_btn.setFocus()
         except Exception:
             pass
         self.message_label.setText("Finished.")
-        QtWidgets.QApplication.processEvents()
+        self.refresh()
 
 
 class ProgressReporter:
@@ -497,25 +516,28 @@ class ProgressReporter:
         self._total = 100
         self._dialog = None
         self._cancelled = False
+        self._suspend_events = False
+        self._title = title
         try:
             app = QtWidgets.QApplication.instance()
             if app is not None:
                 self._dialog = SimpleProgressDialog(title)
-                # Ensure the dialog stays alive until user closes it
                 try:
                     self._dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
                 except Exception:
                     pass
-                self._dialog.show()
+                self._dialog.present()
                 self._use_qt = True
-                # Register this reporter to keep a strong reference
                 self._register_self()
-                # Cleanup when dialog is destroyed/closed
                 try:
                     self._dialog.destroyed.connect(lambda _obj=None: self._on_dialog_destroyed())
                 except Exception:
                     pass
-        except Exception:
+                print(f"[{title}] Progress window opened.")
+            else:
+                print(f"[{title}] No Qt application — logging to console / status bar.")
+        except Exception as exc:
+            print(f"[{title}] Progress window unavailable ({exc}) — logging to console / status bar.")
             self._use_qt = False
 
     def set_total(self, total: int):
@@ -538,22 +560,46 @@ class ProgressReporter:
                 self._dialog.set_message(message)
                 self._dialog.log(message)
             self._dialog.set_value(self._step)
+            if not self._suspend_events:
+                self._dialog.refresh()
         else:
             if message:
                 print(f"[Progress] {self._step}/{self._total}: {message}")
 
     def log(self, message: str):
+        print(message)
+        try:
+            hou.ui.setStatusMessage(f"{self._title}: {message[:120]}")
+        except Exception:
+            pass
         if self._use_qt:
             self._dialog.log(message)
-        else:
-            print(message)
+            if not self._suspend_events:
+                self._dialog.refresh()
 
     def request_cancel(self):
         self._cancelled = True
 
+    class _SuspendEvents:
+        def __init__(self, reporter: "ProgressReporter") -> None:
+            self._reporter = reporter
+            self._previous = False
+
+        def __enter__(self) -> "ProgressReporter._SuspendEvents":
+            self._previous = self._reporter._suspend_events
+            self._reporter._suspend_events = True
+            return self
+
+        def __exit__(self, exc_type, exc, tb) -> None:
+            self._reporter._suspend_events = self._previous
+
+    def suspend_events(self) -> _SuspendEvents:
+        """Disable Qt event pumping while running Houdini ops that crash if UI repaints."""
+        return ProgressReporter._SuspendEvents(self)
+
     def is_cancelled(self) -> bool:
-        if self._use_qt:
-            # Pump the Qt event loop so button clicks (Kill Process) are handled while heavy work runs
+        if self._use_qt and not self._suspend_events:
+            # Pump the Qt event loop so ESC cancel is handled between build steps
             try:
                 QtWidgets.QApplication.processEvents(QtCore.QEventLoop.AllEvents, 50)
             except Exception:

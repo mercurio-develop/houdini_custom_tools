@@ -37,6 +37,7 @@ from tools.lops_asset_builder_v3.lops_asset_builder_v3 import (
     build_geo_and_mtl_variants,
     create_organized_net_note,
     create_karma_nodes,
+    _cook_lop_for_stage,
 )
 from tools.lops_asset_builder_v3.subnet_lookdev_setup import create_subnet_lookdev_setup
 from tools.lops_asset_builder_v3.create_transform_nodes import (
@@ -318,27 +319,38 @@ def build_asset(config: Dict[str, Any] | AssetBuilderConfig,
             if progress.is_cancelled():
                 raise KeyboardInterrupt("Cancelled by user")
 
-            graftstage_lights_node = stage_context.createNode("graftstages", "graftstage_lights_rig")
-            graftstage_lights_node.parm("primpath").set("/turntable/")
-            graftstage_lights_node.parm("destpath").set("/")
-            graftstage_lights_node.setInput(0, current_stream)
+            if not _cook_lop_for_stage(comp_out, progress):
+                progress.log("Skipping light rig: no cooked USD stage on component output.")
+            else:
+                try:
+                    light_rig_nodes_to_layout, light_mixer = lops_light_rig.create_three_point_light(
+                        selected_node=comp_out
+                    )
+                except Exception as exc:
+                    progress.log(f"Skipping light rig: {exc}")
+                    light_rig_nodes_to_layout = None
+                    light_mixer = None
 
-            light_rig_nodes_to_layout, light_mixer = lops_light_rig.create_three_point_light(selected_node=comp_out)
-
-            if progress.is_cancelled():
-                raise KeyboardInterrupt("Cancelled by user")
-
-            create_organized_net_note("Light Rig", light_rig_nodes_to_layout, hou.Vector2(5, 10), create_network_boxes=cfg.create_network_boxes)
-
-            graftstage_lights_node.setInput(1, light_mixer)
-
-            switch_lights_rig_node = stage_context.createNode("switch", "switch_lights_rig")
-            switch_lights_rig_node.setInput(0, current_stream)
-            switch_lights_rig_node.setInput(1, graftstage_lights_node)
-            switch_lights_rig_node.parm("input").set(1)
-            lookdev_setup_layout.extend([switch_lights_rig_node, graftstage_lights_node])
-
-            current_stream = switch_lights_rig_node
+                if light_rig_nodes_to_layout and light_mixer:
+                    graftstage_lights_node = stage_context.createNode("graftstages", "graftstage_lights_rig")
+                    graftstage_lights_node.parm("primpath").set("/turntable/")
+                    graftstage_lights_node.parm("destpath").set("/")
+                    graftstage_lights_node.setInput(0, current_stream)
+                    if progress.is_cancelled():
+                        raise KeyboardInterrupt("Cancelled by user")
+                    create_organized_net_note(
+                        "Light Rig", light_rig_nodes_to_layout, hou.Vector2(5, 10),
+                        create_network_boxes=cfg.create_network_boxes,
+                    )
+                    graftstage_lights_node.setInput(1, light_mixer)
+                    switch_lights_rig_node = stage_context.createNode("switch", "switch_lights_rig")
+                    switch_lights_rig_node.setInput(0, current_stream)
+                    switch_lights_rig_node.setInput(1, graftstage_lights_node)
+                    switch_lights_rig_node.parm("input").set(1)
+                    lookdev_setup_layout.extend([switch_lights_rig_node, graftstage_lights_node])
+                    current_stream = switch_lights_rig_node
+                else:
+                    progress.log("Light rig skipped; lookdev/camera/render will still be created.")
 
         # Environment lights
         if cfg.enable_env_lights:

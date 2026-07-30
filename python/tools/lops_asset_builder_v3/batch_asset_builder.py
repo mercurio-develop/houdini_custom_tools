@@ -1085,7 +1085,7 @@ class ConfigGeneratorDialog(QtWidgets.QDialog):
         # Create Lookdev
         lookdev_row = QtWidgets.QHBoxLayout()
         self.cb_create_lookdev = QtWidgets.QCheckBox()
-        self.cb_create_lookdev.setChecked(False)
+        self.cb_create_lookdev.setChecked(True)
         lookdev_row.addWidget(self.cb_create_lookdev)
         lookdev_help = QtWidgets.QLabel("Setup turntable, camera, and render nodes")
         lookdev_help.setStyleSheet("color: gray; font-size: 10px;")
@@ -1728,10 +1728,10 @@ class ConfigGeneratorDialog(QtWidgets.QDialog):
             except Exception:
                 pass
             try:
+                progress_dialog.present()
+            except Exception:
                 progress_dialog.raise_()
                 progress_dialog.activateWindow()
-            except Exception:
-                pass
             # Initialize progress range using total tasks and start at 0
             try:
                 progress_dialog._tasks_total = int(total_tasks)

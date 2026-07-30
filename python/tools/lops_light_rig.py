@@ -9,20 +9,18 @@ def create_three_point_light(selected_node=None):
     '''
         Create a 3 point light setup around a selected object in solaris
     Returns:
-        nodes_to_layout (list): A list of nodes to layout
+        tuple: (nodes_to_layout, light_mixer) or (None, None) when bounds unavailable
     '''
-
 
     target_node = selected_node if selected_node is not None else hou.selectedNodes()[0]
 
-    # Get the bounding box for the asset
     bounds = misc_utils.calculate_prim_bounds(target_node)
     if bounds is None:
-        raise hou.NodeError(
-            "Could not compute asset bounds for the light rig. "
-            "Ensure the component output has a valid USD stage with a default prim, "
-            "or cook the network before running the builder."
+        print(
+            "Skipping light rig: no USD bounds on component output. "
+            "Cook the network or disable 'Setup Light Rig' in the builder dialog."
         )
+        return None, None
 
     # Caclculate the center and dimension
     center = bounds["center"]

@@ -2,6 +2,8 @@
   "reload_exclude_dirs": [
     "examples",
     "tests",
+    "testing",
+    "dev",
     "_archive",
     ".venv",
     "venv",
@@ -15,6 +17,9 @@
     "tools/examples",
     "tools/lops_asset_builder_v3/examples",
     "tools/lops_asset_builder_v3/tests",
-    "tools/_archive"
+    "tools/_archive",
+    "utils/dev",
+    "utils/testing",
+    "tools/asset_library_builder/test_kb3d.py"
   ]
 }

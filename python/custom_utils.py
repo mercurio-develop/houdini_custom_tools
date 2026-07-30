@@ -113,6 +113,8 @@ def reload_packages(kwargs):
                 continue
             if file == "__init__.py":
                 package_inits.append((module_name, module_path))
+            elif file.startswith("test_") or file.endswith("_test.py"):
+                continue
             else:
                 module_files.append((module_name, module_path))
 
@@ -127,12 +129,11 @@ def reload_packages(kwargs):
 
     def _reload_one(module_name: str) -> None:
         mod = sys.modules.get(module_name)
-        if mod is not None:
-            importlib.reload(mod)
-            print(f"Reloaded Module: {module_name}")
-        else:
-            importlib.import_module(module_name)
-            print(f"Imported Module: {module_name}")
+        if mod is None:
+            # Never import unknown modules during reload (dev/test scripts run on import).
+            return
+        importlib.reload(mod)
+        print(f"Reloaded Module: {module_name}")
 
     # Reload leaf modules first (deepest dotted names), then package __init__ files.
     module_files.sort(key=lambda item: item[0].count("."), reverse=True)
