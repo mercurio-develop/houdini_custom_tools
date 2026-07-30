@@ -4,20 +4,53 @@ import time
 import hou
 import voptoolutils
 
-from tools import tex_to_mtlx, lops_light_rig
 import colorsys
 import random
 from typing import List, Type
 from pxr import Usd,UsdGeom
 from modules.misc_utils import _sanitize, slugify, MaterialNamingConfig
-from tools.lops_asset_builder_v3.component_material_custom import build_component_material_custom
-from tools.lops_asset_builder_v3.componentoutput_custom import componentoutput_custom_creation
-from tools.lops_asset_builder_v3.create_transform_nodes import build_transform_camera_and_scene_node, \
-    build_lights_spin_xform
-from tools.lops_asset_builder_v3.subnet_lookdev_setup import create_subnet_lookdev_setup
 from tools.lops_asset_builder_v3.asset_builder_ui import AssetMaterialVariantsDialog, ProgressReporter
 from tools.lops_asset_builder_v3.material_validator import validate_and_warn_user
 from PySide6 import QtWidgets, QtCore
+
+
+# Subdirs to skip when recursively scanning for textures (KB3D library layout)
+_TEXTURE_WALK_SKIP = frozenset({'geo', 'Models', 'parts', '.git', '__pycache__'})
+_TEXTURE_RES_PRIORITY = ('png4k', 'png2k', 'jpg4k', 'jpg2k', 'png1k', 'jpg1k', 'exr4k', 'exr2k')
+
+
+def _resolve_texture_search_roots(folder_textures: str) -> list[str]:
+    """Resolve texture scan roots; avoid walking entire KB3D library geo/ trees."""
+    folder = os.path.normpath(folder_textures or "")
+    if not folder or not os.path.isdir(folder):
+        return [folder] if folder else []
+
+    textures_dir = os.path.join(folder, "Textures")
+    if os.path.isdir(textures_dir):
+        for res in _TEXTURE_RES_PRIORITY:
+            candidate = os.path.join(textures_dir, res)
+            if os.path.isdir(candidate):
+                return [candidate]
+        return [textures_dir]
+
+    if os.path.basename(folder).lower() == "textures":
+        for res in _TEXTURE_RES_PRIORITY:
+            candidate = os.path.join(folder, res)
+            if os.path.isdir(candidate):
+                return [candidate]
+        return [folder]
+
+    basename = os.path.basename(folder).lower()
+    if basename in _TEXTURE_RES_PRIORITY:
+        return [folder]
+
+    return [folder]
+
+
+def _make_texture_scanner(naming_config: MaterialNamingConfig | None = None):
+    """Headless texture scanner for pipeline builds (no Qt main window)."""
+    from tools.material_tools.TexToMtlX_V2.tex_to_mtlx import TextureFolderScanner
+    return TextureFolderScanner(naming_config)
 
 
 # UI components moved to asset_builder_ui.py: SimpleProgressDialog
@@ -31,9 +64,14 @@ def create_component_builder(selected_directory=None):
     '''
 
     # 1) Show the selection dialog first; do not start progress/logging yet
+    try:
+        main_window = hou.qt.mainWindow()
+    except Exception:
+        main_window = None
     dialog = AssetMaterialVariantsDialog(
         default_asset="",
-        default_maps=""
+        default_maps="",
+        parent=main_window,
     )
     if dialog.exec_() != QtWidgets.QDialog.Accepted:
         # User cancelled before starting the process — nothing to log
@@ -57,7 +95,8 @@ def create_component_builder(selected_directory=None):
 
     # 3) Now start progress and logging UI, after OK
     progress = ProgressReporter("LOPs Asset Builder v3")
-    progress.set_total(12)
+    # Material creation alone may consume ~800 steps; match CLI budget.
+    progress.set_total(1000)
     try:
             progress.step("Validating inputs")
             # Inputs were already validated by the dialog's accept(); these are just safety checks with logging
@@ -164,6 +203,7 @@ def create_component_builder(selected_directory=None):
                 # Give UI a chance before heavy light rig creation
                 if progress.is_cancelled():
                     raise KeyboardInterrupt("Cancelled by user")
+                from tools import lops_light_rig
                 # Create grafstages node lights
                 graftstage_lights_node = stage_context.createNode("graftstages", "graftstage_lights_rig")
                 graftstage_lights_node.parm("primpath").set("/turntable/")
@@ -237,6 +277,11 @@ def create_component_builder(selected_directory=None):
 
 
             progress.step("Creating lookdev subnetwork")
+            from tools.lops_asset_builder_v3.subnet_lookdev_setup import create_subnet_lookdev_setup
+            from tools.lops_asset_builder_v3.create_transform_nodes import (
+                build_transform_camera_and_scene_node,
+                build_lights_spin_xform,
+            )
             # Create Subnetwork lookdev setup
             subnetwork_lookdevsetup_node = create_subnet_lookdev_setup(node_name="lookdev_setup")
             subnetwork_lookdevsetup_node.setInput(0, current_stream)
@@ -289,6 +334,8 @@ def create_component_builder(selected_directory=None):
         progress.mark_finished("Error.")
 
 def _create_inital_nodes(stage_context, node_name: str = "asset_builder"):
+    from tools.lops_asset_builder_v3.component_material_custom import build_component_material_custom
+    from tools.lops_asset_builder_v3.componentoutput_custom import componentoutput_custom_creation
     # Create nodes for the component builder setup
 
     comp_geo = stage_context.createNode("componentgeometry", _sanitize(f"{node_name}_geo"))
@@ -609,6 +656,9 @@ def _create_materials(parent, folder_textures, material_lib, expected_names=None
     if naming_config is None:
         naming_config = MaterialNamingConfig()
     try:
+        from tools import tex_to_mtlx
+        if progress:
+            progress.ensure_total(1000)
         # Normalize path for existence check
         folder_textures_check = os.path.normpath(folder_textures)
         if progress:
@@ -636,34 +686,40 @@ def _create_materials(parent, folder_textures, material_lib, expected_names=None
             _create_mtlx_templates(parent, material_lib)
             return True
 
-        material_handler = tex_to_mtlx.TxToMtlx(naming_config=naming_config)
+        material_handler = _make_texture_scanner(naming_config)
         materials_created_length = 0
 
         # Combined texture list from all subfolders
         combined_texture_list = {}
         valid_folders_found = False
 
-        # Recursively search for textures in the folder and all subfolders
-        for root, dirs, files in os.walk(folder_textures_check):
-            if progress and progress.is_cancelled():
-                raise KeyboardInterrupt("Cancelled by user")
-            # Convert Windows path to Houdini-friendly format
-            current_folder = root.replace(os.sep, "/")
+        search_roots = _resolve_texture_search_roots(folder_textures_check)
+        if progress and len(search_roots) == 1 and search_roots[0] != folder_textures_check:
+            progress.log(f"Resolved texture scan root: {search_roots[0]}")
 
-            # Check if this folder contains valid textures
-            if material_handler.folder_with_textures(current_folder):
-                valid_folders_found = True
-                # Get texture details from this folder
-                folder_texture_list = material_handler.get_texture_details(current_folder)
-                if folder_texture_list and isinstance(folder_texture_list, dict):
-                    # Merge with combined list
-                    combined_texture_list.update(folder_texture_list)
-                # Minor progress tick per valid subfolder discovered
-                if progress:
-                    try:
-                        progress.step(f"Found textures in: {os.path.basename(current_folder)}")
-                    except Exception:
-                        pass
+        # Recursively search for textures (skip geometry/model trees in KB3D libraries)
+        for search_root in search_roots:
+            if not search_root or not os.path.isdir(search_root):
+                continue
+            for root, dirs, files in os.walk(search_root):
+                dirs[:] = [
+                    d for d in dirs
+                    if d not in _TEXTURE_WALK_SKIP and not d.startswith('.')
+                ]
+                if progress and progress.is_cancelled():
+                    raise KeyboardInterrupt("Cancelled by user")
+                current_folder = root.replace(os.sep, "/")
+
+                if material_handler.folder_with_textures(current_folder):
+                    valid_folders_found = True
+                    folder_texture_list = material_handler.get_texture_details(current_folder)
+                    if folder_texture_list and isinstance(folder_texture_list, dict):
+                        combined_texture_list.update(folder_texture_list)
+                    if progress:
+                        try:
+                            progress.step(f"Found textures in: {os.path.basename(current_folder)}")
+                        except Exception:
+                            pass
 
         if valid_folders_found and combined_texture_list:
             start_time = time.perf_counter()
@@ -709,7 +765,7 @@ def _create_materials(parent, folder_textures, material_lib, expected_names=None
                     **common_data,
                     folder_path=path,
                     texture_list=combined_texture_list,
-                    naming_config=naming_config
+                    naming_config=naming_config,
                 )
                 create_material.create_materialx()
 
@@ -840,15 +896,21 @@ def estimate_materials_in_folder(folder_textures: str, expected_names=None) -> i
         folder_textures_check = os.path.normpath(folder_textures or "")
         if not folder_textures_check or not os.path.exists(folder_textures_check):
             return 0
-        material_handler = tex_to_mtlx.TxToMtlx()
+        material_handler = _make_texture_scanner()
         combined_texture_list = {}
-        # Recursively search for textures in the folder and all subfolders
-        for root, dirs, files in os.walk(folder_textures_check):
-            current_folder = root.replace(os.sep, "/")
-            if material_handler.folder_with_textures(current_folder):
-                folder_texture_list = material_handler.get_texture_details(current_folder)
-                if folder_texture_list and isinstance(folder_texture_list, dict):
-                    combined_texture_list.update(folder_texture_list)
+        for search_root in _resolve_texture_search_roots(folder_textures_check):
+            if not search_root or not os.path.isdir(search_root):
+                continue
+            for root, dirs, files in os.walk(search_root):
+                dirs[:] = [
+                    d for d in dirs
+                    if d not in _TEXTURE_WALK_SKIP and not d.startswith('.')
+                ]
+                current_folder = root.replace(os.sep, "/")
+                if material_handler.folder_with_textures(current_folder):
+                    folder_texture_list = material_handler.get_texture_details(current_folder)
+                    if folder_texture_list and isinstance(folder_texture_list, dict):
+                        combined_texture_list.update(folder_texture_list)
         if not combined_texture_list:
             return 0
         if expected_names:
@@ -876,6 +938,9 @@ def build_geo_and_mtl_variants(stage_context, node_name: str, main_asset_file_pa
     Returns:
         tuple: (geometry_variants_node or comp_geo, comp_out, nodes_to_layout, comp_material_last)
     """
+    from tools.lops_asset_builder_v3.component_material_custom import build_component_material_custom
+    from tools.lops_asset_builder_v3.componentoutput_custom import componentoutput_custom_creation
+
     # Create unified material naming configuration
     naming_config = MaterialNamingConfig.from_ui(lowercase=lowercase_material_names)
 

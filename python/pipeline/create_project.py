@@ -5,6 +5,8 @@ import custom_utils
 
 from PySide6 import QtCore, QtUiTools, QtWidgets, QtGui
 
+from ui.houdini_theme import HoudiniTheme
+
 
 class CreateProject(QtWidgets.QMainWindow):
     # CLASS CONSTANTS
@@ -44,9 +46,9 @@ class CreateProject(QtWidgets.QMainWindow):
         '''
         script_path = hou.text.expandString(self.UI_FILE)
         self.ui = QtUiTools.QUiLoader().load(script_path, parentWidget=self)
-        self.setParent(hou.qt.mainWindow(), QtCore.Qt.Window)
-        self.setWindowTitle('Project Creator')
+        HoudiniTheme.setup_dialog(self, title="Project Creator", min_width=400, min_height=500)
         self.setMaximumSize(400, 500)
+        HoudiniTheme.apply(self.ui)
         
         # FIND UI COMPONENTS
         self.sel_directory = self.ui.findChild(QtWidgets.QPushButton, 'bt_directory')

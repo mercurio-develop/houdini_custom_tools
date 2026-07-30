@@ -1,0 +1,7 @@
+{
+  "_comment": "Minimal configuration for basic asset build without lookdev",
+  "main_asset_file_path": "$JOB/assets/props/barrel/barrel.abc",
+  "folder_textures": "$JOB/assets/props/barrel/textures",
+  "asset_name": "Barrel",
+  "create_lookdev": false
+}

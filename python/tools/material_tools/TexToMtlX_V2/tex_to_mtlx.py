@@ -12,6 +12,7 @@ from PySide6 import QtWidgets, QtGui, QtCore
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from modules.misc_utils import slugify, slugify_name_material, _sanitize, MaterialNamingConfig
+from ui.houdini_theme import HoudiniTheme
 
 from tools.material_tools.TexToMtlX_V2.txmtlx_config import (
     TEXT_TO_DISPLAY,
@@ -29,9 +30,84 @@ from tools.material_tools.TexToMtlX_V2.txmtlx_config import (
 )
 
 
+class TextureFolderScanner:
+    """Headless texture folder scanner for pipeline use (no Qt widgets)."""
+
+    def __init__(self, naming_config: MaterialNamingConfig | None = None):
+        self.naming_config = naming_config or MaterialNamingConfig(lowercase=False)
+        self.TEXTURE_EXT = TEXTURE_EXT
+        self.TEXTURE_TYPE = TEXTURE_TYPE
+        self.UDIM_PATTERN = UDIM_PATTERN
+        self.SIZE_PATTERN = SIZE_PATTERN
+        self.texture_list: dict = {}
+
+    def folder_with_textures(self, folder: str) -> bool:
+        if not os.path.exists(folder):
+            return False
+        try:
+            for file in os.listdir(folder):
+                file_path = os.path.join(folder, file)
+                if not os.path.isfile(file_path):
+                    continue
+                if not file.lower().endswith(tuple(self.TEXTURE_EXT)):
+                    continue
+                if "_" in file:
+                    return True
+        except (OSError, PermissionError):
+            return False
+        return False
+
+    def get_texture_details(self, path: str) -> dict:
+        """Return material→texture map for one folder (does not touch Qt)."""
+        texture_list: dict = {}
+        try:
+            if not os.path.exists(path):
+                return texture_list
+            valid_files = []
+            for file in os.listdir(path):
+                file_path = os.path.join(path, file)
+                is_file = os.path.isfile(file_path)
+                valid_extension = file.lower().endswith(tuple(self.TEXTURE_EXT))
+                check_underscore = "_" in file
+                if is_file and valid_extension and check_underscore:
+                    valid_files.append(file)
+            drop_tokens = self.naming_config.drop_tokens
+            lowercase = self.naming_config.lowercase
+            nested = defaultdict(lambda: defaultdict(list))
+            for file in valid_files:
+                split_text = os.path.splitext(file)[0].split("_")
+                material_name = split_text[0]
+                texture_type = None
+                for tx_type in self.TEXTURE_TYPE:
+                    for tx in split_text[1:]:
+                        if tx.lower() == tx_type:
+                            texture_type = tx_type
+                            index = split_text.index(tx)
+                            material_name = '_'.join(split_text[:index])
+                            break
+                    if texture_type:
+                        break
+                if not texture_type:
+                    continue
+                material_name = slugify(material_name, drop_tokens, lowercase=lowercase)
+                udim_match = self.UDIM_PATTERN.search(file)
+                size_match = self.SIZE_PATTERN.search(file)
+                nested[material_name][texture_type].append(file)
+                nested[material_name]['UDIM'] = bool(udim_match)
+                nested[material_name]['FOLDER_PATH'] = path
+                if size_match:
+                    nested[material_name]['Size'] = size_match.group(1)
+            for mat, text_dat in nested.items():
+                texture_list[mat] = dict(text_dat)
+            self.texture_list.update(texture_list)
+            return texture_list
+        except Exception:
+            return texture_list
+
+
 class TxToMtlx(QtWidgets.QMainWindow):
 
-    def __init__(self):
+    def __init__(self, naming_config: MaterialNamingConfig | None = None):
         super().__init__()
 
         # SETUP CENTRAL WIDGET FOR UI
@@ -40,8 +116,13 @@ class TxToMtlx(QtWidgets.QMainWindow):
         self.main_layout = QtWidgets.QVBoxLayout(self.central_widget)
 
         # WINDOW PROPERTIES
-        self.setWindowTitle(UI_CONFIG.get("window_title", "TexToMtlX v2"))
         w, h = UI_CONFIG.get("window_size", (600, 800))
+        HoudiniTheme.setup_dialog(
+            self,
+            title=UI_CONFIG.get("window_title", "TexToMtlX v2"),
+            min_width=w,
+            min_height=h,
+        )
         self.resize(w, h)
         try:
             screen = QtWidgets.QApplication.primaryScreen()
@@ -52,7 +133,7 @@ class TxToMtlx(QtWidgets.QMainWindow):
         except Exception:
             pass
         try:
-            self.setParent(hou.qt.mainWindow(), QtCore.Qt.Window)
+            self.setParent(hou.qt.mainWindow())
             self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowStaysOnTopHint)
         except Exception:
             pass
@@ -60,9 +141,13 @@ class TxToMtlx(QtWidgets.QMainWindow):
         ## DATA
         self.mtlTX = False
         # Material naming configuration (unified approach)
-        self.naming_config = MaterialNamingConfig(lowercase=False)  # Default to preserving case
+        if naming_config is not None:
+            self.naming_config = naming_config
+        else:
+            self.naming_config = MaterialNamingConfig(lowercase=False)
         # Legacy sanitize options for backward compatibility
         self.sanitize_options = self.naming_config.to_sanitize_options()
+        self._scanner = TextureFolderScanner(self.naming_config)
 
         self._setup_help_section()
         self._setup_material_section()
@@ -294,95 +379,36 @@ class TxToMtlx(QtWidgets.QMainWindow):
 
     def get_texture_details(self, path):
         ''' Get the details for the texture inside a folder'''
-
         try:
-            # Validate the path
-            texture_list = defaultdict(lambda: defaultdict(list))
-            if not os.path.exists(path):
-                raise ValueError(f"Path does not exist: {path}")
-            # Get all the valid texture inside the folder
-            valid_files = []
-            for file in os.listdir(path):
-                file_path = os.path.join(path, file)
-                # Conditions
-                is_file = os.path.isfile(file_path)
-                valid_extension = file.lower().endswith(tuple(self.TEXTURE_EXT))
-                check_underscore = "_" in file
-                if is_file and valid_extension and check_underscore:
-                    valid_files.append(file)
-            # Process files - textures
-            for file in valid_files:
-                split_text = os.path.splitext(file)[0]
-                split_text = split_text.split("_")
-                material_name = split_text[0]
-                # Find the texture type
-                texture_type = None
-                for tx_type in self.TEXTURE_TYPE:
-                    for tx in split_text[1:]:
-                        if tx.lower() == tx_type:
-                            texture_type = tx_type
-                            index = split_text.index(tx)
-                            material_name = '_'.join(split_text[:index])
-                            break
-                if not texture_type:
-                    continue
-                # Get UDIM and Size
-                # Apply material naming configuration from UI
-                lowercase = self.cb_lowercase.isChecked()
+            if hasattr(self, 'cb_lowercase'):
                 drop_tokens = None
                 if self.le_drop_tokens.text().strip():
-                    drop_tokens = {t.strip().lower() for t in self.le_drop_tokens.text().split(',') if t.strip()}
-                material_name = slugify(material_name, drop_tokens, lowercase=lowercase)
-                udim_match = self.UDIM_PATTERN.search(file)
-                size_match = self.SIZE_PATTERN.search(file)
-                # Update texture list
-                texture_list[material_name][texture_type].append(file)
-                texture_list[material_name]['UDIM'] = bool(udim_match)
-                texture_list[material_name]['FOLDER_PATH'] = path
-                if size_match:
-                    texture_list[material_name]['Size'] = size_match.group(1)
-            # Convert defaultdict to regular dictionary
-            texture_list = dict(texture_list)
-            _new_dict = {}
-            for mat, text_dat in texture_list.items():
-                _new_dict[mat] = dict(text_dat)
-            self.texture_list.update(_new_dict)
-            # Update the UI
-            self.model.clear()
-            for mat in self.texture_list:
-                self.model.appendRow(QtGui.QStandardItem(mat))
-            self.bt_sel_all.setEnabled(True)
-            self.bt_sel_non.setEnabled(True)
+                    drop_tokens = {
+                        t.strip().lower()
+                        for t in self.le_drop_tokens.text().split(',')
+                        if t.strip()
+                    }
+                self.naming_config = MaterialNamingConfig(
+                    enabled=True,
+                    lowercase=self.cb_lowercase.isChecked(),
+                    drop_tokens=drop_tokens,
+                )
+                self._scanner.naming_config = self.naming_config
+            folder_dict = self._scanner.get_texture_details(path)
+            if folder_dict:
+                self.texture_list.update(folder_dict)
+                self.model.clear()
+                for mat in self.texture_list:
+                    self.model.appendRow(QtGui.QStandardItem(mat))
+                self.bt_sel_all.setEnabled(True)
+                self.bt_sel_non.setEnabled(True)
             return self.texture_list
         except Exception as e:
             hou.ui.displayMessage(f"Error retrieving the textures details: {str(e)}", severity=hou.severityType.Error)
+            return self.texture_list
 
     def folder_with_textures(self, folder):
-        '''
-        Check to see it the folder contains any valid textures
-        Args:
-            folder:
-
-        Returns:
-
-        '''
-
-        if not os.path.exists(folder):
-            return False
-        try:
-            for file in os.listdir(folder):
-                file_path = os.path.join(folder, file)
-                if not os.path.isfile(file_path):
-                    continue
-                if not file.lower().endswith(tuple(self.TEXTURE_EXT)):
-                    continue
-                if "_" in file:
-                    return True
-        except (OSError, PermissionError) as e:
-            hou.ui.displayMessage(
-                f"Error accessing folder {folder}: {str(e)}", severity=hou.severityType.Error
-            )
-            return False
+        return self._scanner.folder_with_textures(folder)
 
     def on_checkbox(self, _state):
         self.mtlTX = self.checkbox.isChecked()

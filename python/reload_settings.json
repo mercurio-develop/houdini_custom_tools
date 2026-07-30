@@ -1,0 +1,20 @@
+{
+  "reload_exclude_dirs": [
+    "examples",
+    "tests",
+    "_archive",
+    ".venv",
+    "venv",
+    "env",
+    "__pycache__",
+    "site-packages",
+    "dist-packages"
+  ],
+  "reload_exclude_paths": [
+    "tools/kb3d_tools/examples",
+    "tools/examples",
+    "tools/lops_asset_builder_v3/examples",
+    "tools/lops_asset_builder_v3/tests",
+    "tools/_archive"
+  ]
+}

@@ -1,0 +1,790 @@
+{
+  "asset_name": "KB3D_MTM_BldgLgCommsArray_A",
+  "asset_path": "/media/tushita/TUSHITA_LINUX_DATA/assets/kb3d_missiontominerva/Models/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A.usd",
+  "default_prim": "/KB3D_MTM_BldgLgCommsArray_A",
+  "external_props": [
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_1LPlatform_002",
+      "ref_path": "../KB3D_MTM_PropRaisedModules_A_1LPlatform/KB3D_MTM_PropRaisedModules_A_1LPlatform.usd",
+      "kind": "component",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          -23.163604736328125,
+          0.0010902881622314453,
+          40.20618438720703
+        ],
+        "rotate": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "xform_op_order": [
+          "xformOp:translate"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_1LPlatform_002"
+    },
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_1LWalkwayA_002",
+      "ref_path": "../KB3D_MTM_PropWalkwaySystem_A/KB3D_MTM_PropWalkwaySystem_A.usd",
+      "kind": "component",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          13.7509765625,
+          0.0010902881622314453,
+          40.22862243652344
+        ],
+        "rotate": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "xform_op_order": [
+          "xformOp:translate"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_1LWalkwayA_002"
+    },
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_1LWalkwayB_002",
+      "ref_path": "../KB3D_MTM_PropWalkwaySystem_A/KB3D_MTM_PropWalkwaySystem_A.usd",
+      "kind": "component",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          -5.423492431640625,
+          0.0010902881622314453,
+          40.22862243652344
+        ],
+        "rotate": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "xform_op_order": [
+          "xformOp:translate"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_1LWalkwayB_002"
+    },
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_2LPlatform_002",
+      "ref_path": "../KB3D_MTM_PropRaisedModules_B_2LPlatform/KB3D_MTM_PropRaisedModules_B_2LPlatform.usd",
+      "kind": "component",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          23.985809326171875,
+          0.0010867118835449219,
+          20.06146240234375
+        ],
+        "rotate": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "xform_op_order": [
+          "xformOp:translate"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_2LPlatform_002"
+    },
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_2LWalkwayA_002",
+      "ref_path": "../KB3D_MTM_PropWalkwaySystem_B/KB3D_MTM_PropWalkwaySystem_B.usd",
+      "kind": "component",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          4.201080322265625,
+          0.0010838508605957031,
+          1.5211029052734375
+        ],
+        "rotate": [
+          0.0,
+          -89.99979400634766,
+          0.0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "xform_op_order": [
+          "xformOp:translate",
+          "xformOp:rotateXYZ"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_2LWalkwayA_002"
+    },
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_2LWalkwayB_002",
+      "ref_path": "../KB3D_MTM_PropWalkwaySystem_D/KB3D_MTM_PropWalkwaySystem_D.usd",
+      "kind": "assembly",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          4.202178955078125,
+          0.0010752677917480469,
+          20.06031036376953
+        ],
+        "rotate": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "xform_op_order": [
+          "xformOp:translate"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_2LWalkwayB_002"
+    },
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_2LWalkwayC_001",
+      "ref_path": "../KB3D_MTM_PropWalkwaySystem_B/KB3D_MTM_PropWalkwaySystem_B.usd",
+      "kind": "component",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          -14.433929443359375,
+          0.0010867118835449219,
+          20.061431884765625
+        ],
+        "rotate": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "xform_op_order": [
+          "xformOp:translate"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_2LWalkwayC_001"
+    },
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_2LWalkwayC_003",
+      "ref_path": "../KB3D_MTM_PropWalkwaySystem_B/KB3D_MTM_PropWalkwaySystem_B.usd",
+      "kind": "component",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          -31.035064697265625,
+          0.0010867118835449219,
+          20.061447143554688
+        ],
+        "rotate": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "xform_op_order": [
+          "xformOp:translate"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_2LWalkwayC_003"
+    },
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_LargeStair_002",
+      "ref_path": "../KB3D_MTM_PropLargeStairs_A/KB3D_MTM_PropLargeStairs_A.usd",
+      "kind": "component",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          4.201019287109375,
+          0.0010900497436523438,
+          40.217437744140625
+        ],
+        "rotate": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "xform_op_order": [
+          "xformOp:translate"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_LargeStair_002"
+    },
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_SmallModuleA_002",
+      "ref_path": "../KB3D_MTM_PropRaisedModules_A_MainModule/KB3D_MTM_PropRaisedModules_A_MainModule.usd",
+      "kind": "component",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          117.17945861816406,
+          15.045698165893555,
+          -18.638809204101562
+        ],
+        "rotate": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "xform_op_order": [
+          "xformOp:translate"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_SmallModuleA_002"
+    },
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_SmallModuleB_002",
+      "ref_path": "../KB3D_MTM_PropRaisedModules_A_MainModule/KB3D_MTM_PropRaisedModules_A_MainModule.usd",
+      "kind": "component",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          24.94775390625,
+          8.716547012329102,
+          20.061447143554688
+        ],
+        "rotate": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "xform_op_order": [
+          "xformOp:translate"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_SmallModuleB_002"
+    },
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_SmallModuleC_002",
+      "ref_path": "../KB3D_MTM_PropRaisedModules_A_MainModule/KB3D_MTM_PropRaisedModules_A_MainModule.usd",
+      "kind": "component",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          -22.2130126953125,
+          5.0598464012146,
+          40.321624755859375
+        ],
+        "rotate": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "xform_op_order": [
+          "xformOp:translate"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_SmallModuleC_002"
+    },
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_SmallModuleD_001",
+      "ref_path": "../KB3D_MTM_PropRaisedModules_A_MainModule/KB3D_MTM_PropRaisedModules_A_MainModule.usd",
+      "kind": "component",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          117.55622863769531,
+          15.145666122436523,
+          -18.638809204101562
+        ],
+        "rotate": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "xform_op_order": [
+          "xformOp:translate"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_SmallModuleD_001"
+    },
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_SmallModuleD_002",
+      "ref_path": "../KB3D_MTM_PropRaisedModules_A_MainModule/KB3D_MTM_PropRaisedModules_A_MainModule.usd",
+      "kind": "component",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          8.804168701171875,
+          15.145666122436523,
+          -18.638809204101562
+        ],
+        "rotate": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "xform_op_order": [
+          "xformOp:translate"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_SmallModuleD_002"
+    },
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_SmallStair_002",
+      "ref_path": "../KB3D_MTM_PropSmallStairs_A/KB3D_MTM_PropSmallStairs_A.usd",
+      "kind": "component",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          23.47259521484375,
+          0.0010898113250732422,
+          37.39002990722656
+        ],
+        "rotate": [
+          -0.0,
+          179.9995880126953,
+          -0.0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "xform_op_order": [
+          "xformOp:translate",
+          "xformOp:rotateXYZ"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_SmallStair_002"
+    },
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_SolarPanelPostA_002",
+      "ref_path": "../KB3D_MTM_PropSolarPanel_A/KB3D_MTM_PropSolarPanel_A.usd",
+      "kind": "assembly",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          -58.973236083984375,
+          20.205184936523438,
+          11.526657104492188
+        ],
+        "rotate": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.1759617328643799,
+          1.1759617328643799,
+          1.1759617328643799
+        ],
+        "xform_op_order": [
+          "xformOp:translate",
+          "xformOp:scale"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_SolarPanelPostA_002"
+    },
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_SolarPanelPostB_002",
+      "ref_path": "../KB3D_MTM_PropSolarPanel_A/KB3D_MTM_PropSolarPanel_A.usd",
+      "kind": "assembly",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          -58.973236083984375,
+          20.205184936523438,
+          16.605392456054688
+        ],
+        "rotate": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.1759617328643799,
+          1.1759617328643799,
+          1.1759617328643799
+        ],
+        "xform_op_order": [
+          "xformOp:translate",
+          "xformOp:scale"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_SolarPanelPostB_002"
+    },
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_SolarPanelPostC_002",
+      "ref_path": "../KB3D_MTM_PropSolarPanel_C/KB3D_MTM_PropSolarPanel_C.usd",
+      "kind": "assembly",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          24.947769165039062,
+          12.716817855834961,
+          17.177444458007812
+        ],
+        "rotate": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "xform_op_order": [
+          "xformOp:translate"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_SolarPanelPostC_002"
+    },
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_SolarPanelPostD_002",
+      "ref_path": "../KB3D_MTM_PropSolarPanel_C/KB3D_MTM_PropSolarPanel_C.usd",
+      "kind": "assembly",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          24.947769165039062,
+          12.716819763183594,
+          22.945358276367188
+        ],
+        "rotate": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "xform_op_order": [
+          "xformOp:translate"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_SolarPanelPostD_002"
+    },
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_SolarPanelPostE_002",
+      "ref_path": "../KB3D_MTM_PropSolarPanel_C/KB3D_MTM_PropSolarPanel_C.usd",
+      "kind": "assembly",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          24.947769165039062,
+          12.716817855834961,
+          20.061447143554688
+        ],
+        "rotate": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "xform_op_order": [
+          "xformOp:translate"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_SolarPanelPostE_002"
+    },
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_SolarPanelPostF_002",
+      "ref_path": "../KB3D_MTM_PropSolarPanel_C/KB3D_MTM_PropSolarPanel_C.usd",
+      "kind": "assembly",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          -22.2130126953125,
+          9.04098129272461,
+          37.43768310546875
+        ],
+        "rotate": [
+          -0.0,
+          179.9995880126953,
+          -0.0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "xform_op_order": [
+          "xformOp:translate",
+          "xformOp:rotateXYZ"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_SolarPanelPostF_002"
+    },
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_SolarPanelPostG_002",
+      "ref_path": "../KB3D_MTM_PropSolarPanel_C/KB3D_MTM_PropSolarPanel_C.usd",
+      "kind": "assembly",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          -22.2130126953125,
+          9.04098129272461,
+          43.20558166503906
+        ],
+        "rotate": [
+          -0.0,
+          179.9995880126953,
+          -0.0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "xform_op_order": [
+          "xformOp:translate",
+          "xformOp:rotateXYZ"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_SolarPanelPostG_002"
+    },
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_SolarPanelPostH_002",
+      "ref_path": "../KB3D_MTM_PropSolarPanel_C/KB3D_MTM_PropSolarPanel_C.usd",
+      "kind": "assembly",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          -22.2130126953125,
+          9.04098129272461,
+          40.321624755859375
+        ],
+        "rotate": [
+          -0.0,
+          179.9995880126953,
+          -0.0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "xform_op_order": [
+          "xformOp:translate",
+          "xformOp:rotateXYZ"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_SolarPanelPostH_002"
+    },
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_SolarPanelPostI_002",
+      "ref_path": "../KB3D_MTM_PropSolarPanel_A/KB3D_MTM_PropSolarPanel_A.usd",
+      "kind": "assembly",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          -58.973236083984375,
+          20.07697296142578,
+          6.4479522705078125
+        ],
+        "rotate": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.1759617328643799,
+          1.1759617328643799,
+          1.1759617328643799
+        ],
+        "xform_op_order": [
+          "xformOp:translate",
+          "xformOp:scale"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_SolarPanelPostI_002"
+    },
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_TunnelConnector_002",
+      "ref_path": "../KB3D_MTM_PropTunnelStaight_A/KB3D_MTM_PropTunnelStaight_A.usd",
+      "kind": "assembly",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          79.32989501953125,
+          0.0010805130004882812,
+          -18.638931274414062
+        ],
+        "rotate": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "xform_op_order": [
+          "xformOp:translate"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_TunnelConnector_002"
+    },
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_TunnelConnector_003",
+      "ref_path": "../KB3D_MTM_PropTunnelConnector_A/KB3D_MTM_PropTunnelConnector_A.usd",
+      "kind": "assembly",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          69.86215209960938,
+          5.42921257019043,
+          -18.638931274414062
+        ],
+        "rotate": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "xform_op_order": [
+          "xformOp:translate"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_TunnelConnector_003"
+    },
+    {
+      "instance_name": "KB3D_MTM_BldgLgCommsArray_A_TunnelConnector_004",
+      "ref_path": "../KB3D_MTM_PropTunnelStaight_A/KB3D_MTM_PropTunnelStaight_A.usd",
+      "kind": "assembly",
+      "instanceable": true,
+      "transform": {
+        "translate": [
+          60.39442443847656,
+          0.0010805130004882812,
+          -18.638931274414062
+        ],
+        "rotate": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "xform_op_order": [
+          "xformOp:translate"
+        ]
+      },
+      "prim_path": "/KB3D_MTM_BldgLgCommsArray_A/KB3D_MTM_BldgLgCommsArray_A_Building/KB3D_MTM_BldgLgCommsArray_A_TunnelConnector_004"
+    }
+  ],
+  "internal_prototypes": [],
+  "materials": [
+    "KB3D_MTM_MetalPanelDGrayTrimA",
+    "KB3D_MTM_MetalPanelGrayTrimA",
+    "KB3D_MTM_MetalPanelRedTrimA",
+    "KB3D_MTM_MetalPanelWhiteTrimStrapsA",
+    "KB3D_MTM_MetalPanelYellowTrimA",
+    "KB3D_MTM_MetalWornFillA",
+    "KB3D_MTM_MetalPanelYellowTrimStrapsA",
+    "KB3D_MTM_MetalPanelWhiteTrimE",
+    "KB3D_MTM_MetalPanelGrayTrimE",
+    "KB3D_MTM_GlassArmoredMKapton",
+    "KB3D_MTM_MetalPanelWhiteTrimF",
+    "KB3D_MTM_MagneticEnergy",
+    "KB3D_MTM_EmisBlue",
+    "KB3D_MTM_MetalPanelWhiteTrimA",
+    "KB3D_MTM_EmisGold",
+    "KB3D_MTM_MetalPanelWhiteTrimD",
+    "KB3D_MTM_FloorPanelsSpots",
+    "KB3D_MTM_Decals",
+    "KB3D_MTM_GlassArmored",
+    "KB3D_MTM_MetalPanelWhiteTrimB",
+    "KB3D_MTM_MetalPanelBlueTrimA",
+    "KB3D_MTM_MetalPanelGrayTrimD",
+    "KB3D_MTM_ConcreteGrayIndustrial",
+    "KB3D_MTM_MetalPanelWhiteFill",
+    "KB3D_MTM_EmisLight",
+    "KB3D_MTM_GlassArmoredLight",
+    "KB3D_MTM_MetalPanelDGrayFill",
+    "KB3D_MTM_MetalPanelDGrayTrimD",
+    "KB3D_MTM_EmisGreen",
+    "KB3D_MTM_MetalPanelDGrayTrimStrapsA",
+    "KB3D_MTM_GlassSolar",
+    "KB3D_MTM_SolarWingSTS",
+    "KB3D_MTM_MetalPanelWhiteTrimC",
+    "KB3D_MTM_FloorPanelsSpotsB",
+    "KB3D_MTM_MetalPanelYellowScratched"
+  ],
+  "texture_variants": [
+    "jpg1k",
+    "jpg2k",
+    "jpg4k",
+    "png1k",
+    "png2k",
+    "png4k"
+  ]
+}

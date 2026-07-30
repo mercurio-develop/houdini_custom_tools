@@ -1,0 +1,20 @@
+#usda 1.0
+(
+    defaultPrim = "PortfolioSampleAssembly"
+    doc = "Minimal USD sample for Production Hub sandbox publish (no proprietary KB3D geometry)."
+    upAxis = "Y"
+)
+
+def Xform "PortfolioSampleAssembly" (
+    kind = "assembly"
+    customData = {
+        string kb3d_asset_code = "KB3D_MTM_PortfolioSample_A"
+    }
+)
+{
+    def Cube "proxy_geo"
+    {
+        double size = 2
+        color3f[] primvars:displayColor = [(0.2, 0.5, 0.85)]
+    }
+}

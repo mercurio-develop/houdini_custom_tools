@@ -2,11 +2,12 @@ import hou
 import os
 from PySide6 import QtWidgets, QtCore
 
+from ui.houdini_theme import HoudiniTheme
+
 class MergeHipDialog(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Merge HIP into Current Scene")
-        self.setMinimumWidth(520)
+        HoudiniTheme.setup_dialog(self, title="Merge HIP into Current Scene", min_width=520, min_height=280)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose, False)  # keep instance alive
 
         # --- widgets ---

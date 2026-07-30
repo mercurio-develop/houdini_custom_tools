@@ -15,6 +15,8 @@ from PySide6 import QtWidgets, QtGui, QtCore
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
+from ui.houdini_theme import HoudiniTheme
+
 from modules.asset_folder_scanner import scan_asset_folder
 from modules.usd_reference_importer import import_scanned_assets
 from modules.usd_material_expander import expand_materials_from_folder
@@ -28,25 +30,8 @@ class AssetFolderAnalyzerUI(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
 
-        # Set up window
-        self.setWindowTitle("Asset Folder Analyzer")
+        HoudiniTheme.setup_dialog(self, title="Asset Folder Analyzer", min_width=1000, min_height=800)
         self.resize(1000, 800)
-
-        # Center window
-        try:
-            screen = QtWidgets.QApplication.primaryScreen()
-            screen_geometry = screen.availableGeometry()
-            x = (screen_geometry.width() - 1000) // 2
-            y = (screen_geometry.height() - 800) // 2
-            self.move(x, y)
-        except Exception:
-            pass
-
-        # Parent to Houdini
-        try:
-            self.setParent(hou.qt.mainWindow(), QtCore.Qt.Window)
-        except Exception:
-            pass
 
         # Data
         self.scan_result = None

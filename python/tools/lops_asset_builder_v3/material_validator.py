@@ -8,8 +8,10 @@ by the available texture folders, and provides detailed warnings to users.
 import os
 from typing import List, Dict, Set, Tuple
 import hou
+from PySide6 import QtWidgets
 from modules.misc_utils import slugify, MaterialNamingConfig
 from tools.lops_asset_builder_v3.texture_variant_detector import TextureVariantDetector
+from ui.houdini_theme import HoudiniTheme
 
 
 class MaterialValidationResult:
@@ -350,31 +352,19 @@ def validate_and_warn_user(
     # Show dialog if requested and there are warnings
     if show_dialog and result.has_warnings:
         try:
-            from PySide6 import QtWidgets
-
-            msg_box = QtWidgets.QMessageBox()
-            msg_box.setWindowTitle("Material Validation Warning")
-            msg_box.setIcon(QtWidgets.QMessageBox.Warning)
-
-            msg_box.setText(
-                f"<b>⚠️ Material validation found {len(result.materials_missing)} missing material(s)</b>"
+            response = HoudiniTheme.themed_message_box(
+                title="Material Validation Warning",
+                text=f"<b>Material validation found {len(result.materials_missing)} missing material(s)</b>",
+                icon=QtWidgets.QMessageBox.Warning,
+                buttons=QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                informative_text=(
+                    "Some materials referenced in geometry don't have matching texture files.\n"
+                    "These materials will use fallback template shaders.\n\n"
+                    "Do you want to continue?"
+                ),
+                detailed_text=result.get_summary(),
             )
-
-            msg_box.setInformativeText(
-                "Some materials referenced in geometry don't have matching texture files.\n"
-                "These materials will use fallback template shaders.\n\n"
-                "Do you want to continue?"
-            )
-
-            msg_box.setDetailedText(result.get_summary())
-
-            msg_box.setStandardButtons(
-                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
-            )
-            msg_box.setDefaultButton(QtWidgets.QMessageBox.Yes)
-
-            response = msg_box.exec_()
-            user_continues = (response == QtWidgets.QMessageBox.Yes)
+            user_continues = response == QtWidgets.QMessageBox.Yes
 
             return result, user_continues
 

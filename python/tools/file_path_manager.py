@@ -3,6 +3,8 @@ import os
 import platform
 from PySide6 import QtCore, QtGui, QtWidgets, QtUiTools
 
+from ui.houdini_theme import HoudiniTheme
+
 class FilePathsManagerUI(QtWidgets.QMainWindow):
     # Node types and their file path parameters to check (values as lists)
     FILE_PATH_NODES = {
@@ -77,11 +79,7 @@ class FilePathsManagerUI(QtWidgets.QMainWindow):
 
     def __init__(self):
         super().__init__()
-        # Create UI from scratch since we don't have a UI file
-        self.setParent(hou.qt.mainWindow(), QtCore.Qt.Window)
-        self.setWindowTitle("File Paths Manager")
-        self.setMinimumWidth(1200)
-        self.setMinimumHeight(600)
+        HoudiniTheme.setup_dialog(self, title="File Paths Manager", min_width=1200, min_height=600)
 
         # Main layout
         self.central_widget = QtWidgets.QWidget()

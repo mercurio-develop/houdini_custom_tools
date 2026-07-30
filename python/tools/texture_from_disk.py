@@ -20,6 +20,8 @@ def texture_from_disk():
 
     # select folder
     scan_dir = hou.ui.selectFile(file_type=hou.fileType.Directory)
+    if not scan_dir:
+        return
     print(scan_dir)
 
     # remap input texture names
@@ -35,6 +37,9 @@ def texture_from_disk():
         default_choice=0, close_choice=1,
     )
 
+    if user_input_button == 1:
+        return
+
     user_suffix = user_input_values[0]
     user_basecol_name = user_input_values[1]
     user_metallic_name = user_input_values[2]
@@ -48,7 +53,7 @@ def texture_from_disk():
 
     if (user_displacement_amount.isnumeric() == False):
         hou.ui.displayMessage("Displacement Amount must be numeric", severity=hou.severityType.Warning)
-        quit()
+        return
 
     # scan folder
     for root, dirs, files in os.walk(scan_dir, topdown=False):
@@ -67,7 +72,7 @@ def texture_from_disk():
         hou.ui.displayMessage(
             "No basecolor of that name was found on a .jpg, .jpeg, or .png. Note this tool does not support UDIMS",
             severity=hou.severityType.Warning)
-        quit()
+        return
 
     print("INITIALIZING MATERIAL BUILDER")
 

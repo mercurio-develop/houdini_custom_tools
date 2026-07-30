@@ -111,8 +111,10 @@ def calculate_prim_bounds(target_node):
         return None
 
     # Calculate the bounding box
-    bounds = loputils.computePrimWorldBounds(target_node,[prim])
-    print(type(bounds))
+    bounds = loputils.computePrimWorldBounds(target_node, [prim])
+    if bounds is None:
+        print(f"Could not compute bounds for prim {prim.GetPath()}")
+        return None
 
     # Extract the bounding box information
     range3d = bounds.GetRange()

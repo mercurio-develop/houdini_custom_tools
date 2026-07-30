@@ -1,0 +1,66 @@
+# Claude ignore patterns
+# This file tells Claude Code which files/folders to exclude from context uploads.
+
+# VCS
+.git/
+.gitignore
+
+# Python caches and virtual envs
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+.env
+.env.*
+.python-version
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# IDE/editor config
+.idea/
+.vscode/
+*.iml
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Build/dist
+build/
+dist/
+.eggs/
+*.egg-info/
+
+# Notebooks and checkpoints
+.ipynb_checkpoints/
+
+# Houdini specific caches/temp (conservative)
+# Exclude typical temp/cache directories if present alongside tools
+cache/
+tmp/
+
+# Large assets (keep code-focused context)
+assets/
+textures/
+reference/
+
+# Logs
+*.log
+logs/
+
+# Binary blobs
+*.exe
+*.dll
+*.so
+*.dylib
+*.bin
+*.zip
+*.tar
+*.tar.gz
+*.7z
+
+# Node modules (if any)
+node_modules/

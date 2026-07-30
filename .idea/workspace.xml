@@ -4,15 +4,81 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2d019382-e465-4f32-9958-ff97f4f10a31" name="Changes" comment="" />
+    <list default="true" id="2d019382-e465-4f32-9958-ff97f4f10a31" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/python/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/BGEO_to_KB3D_USD/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/tools/BGEO_to_KB3D_USD/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/BGEO_to_KB3D_USD/bgeo_analyzer.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/BGEO_to_KB3D_USD/bgeo_to_usd_converter.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/BGEO_to_KB3D_USD/export_bgeo_with_attributes.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/BGEO_to_KB3D_USD/import_kb3d_bgeo.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/KB3D_converter.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/tools/kb3d_tools/KB3D_converter.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/asset_library_builder/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/tools/asset_library_builder/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/kb3d_assembly_builder.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/tools/kb3d_tools/kb3d_assembly_builder.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/kb3d_assembly_builder_ui.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/tools/kb3d_tools/kb3d_assembly_builder_ui.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/kb3d_clone_assembly_transforms.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/tools/kb3d_tools/kb3d_clone_assembly_transforms.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/kb3d_extract_transforms.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/tools/kb3d_tools/kb3d_extract_transforms.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/kb3d_from_bgeo.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/tools/kb3d_tools/kb3d_from_bgeo.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/kb3d_from_parts_builder.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/tools/kb3d_tools/kb3d_from_parts_builder.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/kb3d_parts_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/tools/kb3d_tools/kb3d_parts_processor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/kb3d_proper_assembly_builder.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/tools/kb3d_tools/kb3d_proper_assembly_builder.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/kb3d_proper_assembly_builder_shelf.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/tools/kb3d_tools/kb3d_proper_assembly_builder_shelf.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/kb3d_proper_assembly_builder_ui.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/tools/kb3d_tools/kb3d_proper_assembly_builder_ui.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/kb3d_reference_builder.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/tools/kb3d_tools/kb3d_reference_builder.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/kb3d_reverse_engineering/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/kb3d_reverse_engineering/kb3d_usd_analyzer.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/kb3d_usd_builder.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/lops_asset_builder.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/lops_asset_builder_v2/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/lops_asset_builder_v2/lops_asset_builder_v2.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/lops_asset_builder_v3/batch_asset_builder.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/tools/lops_asset_builder_v3/batch_asset_builder.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/lops_asset_builder_workflow/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/lops_asset_builder_workflow_LEGACY/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/lops_asset_builder_workflow_LEGACY/config/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/lops_asset_builder_workflow_LEGACY/config/constants.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/lops_asset_builder_workflow_LEGACY/lops_asset_builder_workflow.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/lops_asset_builder_workflow_LEGACY/lops_asset_builder_workflow_backup.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/lops_asset_builder_workflow_LEGACY/main.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/lops_asset_builder_workflow_LEGACY/models/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/lops_asset_builder_workflow_LEGACY/models/data_model.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/lops_asset_builder_workflow_LEGACY/models/settings_model.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/lops_asset_builder_workflow_LEGACY/ui/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/lops_asset_builder_workflow_LEGACY/ui/components.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/lops_asset_builder_workflow_LEGACY/ui/houdini_theme.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/lops_asset_builder_workflow_LEGACY/ui/main_dialog.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/lops_asset_builder_workflow_LEGACY/ui/material_theme_processor.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/lops_asset_builder_workflow_LEGACY/ui/missing_files_dialog.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/lops_asset_builder_workflow_LEGACY/ui/validation_dialog.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/lops_asset_builder_workflow_LEGACY/utils/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/lops_asset_builder_workflow_LEGACY/utils/file_operations.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/lops_asset_builder_workflow_LEGACY/utils/validation.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/lops_light_rig_pipeline.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/tools/lops_light_rig_pipeline.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/tools/tex_to_mtlx.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/tools/tex_to_mtlx.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 6
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "orqodev"
+  }
 }]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "git@github.com:orqodev/custom_tools.git",
+    "accountId": "5057dfdd-2b9b-4401-b861-300c4a85fe71"
+  }
+}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 6
+}</component>
   <component name="ProjectId" id="2wSiLknlFtaiYxseOz33aZcRa1i" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -20,21 +86,27 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "last_opened_file_path": "C:/Users/Alejandro Fidanza/OneDrive/Documents/houdini20.5/custom_tools/scripts",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "main",
+    "junie.onboarding.icon.badge.shown": "true",
+    "last_opened_file_path": "/home/tushita/dev",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
+    "to.speed.mode.migration.done": "true",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-822845ee3bb5-JavaScript-PY-243.23654.177" />
-        <option value="bundled-python-sdk-91d3a02ef49d-43b77aa2d136-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-243.23654.177" />
+        <option value="bundled-js-predefined-d6986cc7102b-09060db00ec0-JavaScript-PY-251.26927.90" />
+        <option value="bundled-python-sdk-41e8cd69c857-64d779b69b7a-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-251.26927.90" />
       </set>
     </attachedChunks>
   </component>
@@ -47,6 +119,7 @@
       <option name="presentableId" value="Default" />
       <updated>1746041321565</updated>
       <workItem from="1746041322647" duration="5243000" />
+      <workItem from="1785187725245" duration="3974000" />
     </task>
     <servers />
   </component>

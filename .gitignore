@@ -1,5 +1,9 @@
 .idea/*
 
+# Python bytecode
+__pycache__/
+*.py[cod]
+
 # Test files - ignore all test files to avoid pushing them
 test_*.py
 **/test_*.py

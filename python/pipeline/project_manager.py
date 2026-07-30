@@ -6,6 +6,7 @@ import shutil
 from PySide6 import QtCore, QtUiTools, QtWidgets, QtGui
 from PySide6.QtCore import Qt
 from pipeline.save_tool import SaveToolWindow
+from ui.houdini_theme import HoudiniTheme
 
 
 class ProjectManager(QtWidgets.QMainWindow):
@@ -53,9 +54,9 @@ class ProjectManager(QtWidgets.QMainWindow):
         '''
         script_path = hou.text.expandString(self.UI_FILE)
         self.ui = QtUiTools.QUiLoader().load(script_path, parentWidget=self)
-        self.setParent(hou.qt.mainWindow(), QtCore.Qt.Window)
-        self.setWindowTitle("Project Manager")
+        HoudiniTheme.setup_dialog(self, title="Project Manager", min_width=900, min_height=640)
         self.setMaximumSize(1280, 640)
+        HoudiniTheme.apply(self.ui)
         # PROJECTS
         self.project_list = self.ui.findChild(QtWidgets.QListWidget, "lw_projects")
         self.btn_delete = self.ui.findChild(QtWidgets.QPushButton, "bt_proj_delete")

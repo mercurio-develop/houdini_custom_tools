@@ -3,6 +3,8 @@ import os
 import re
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from ui.houdini_theme import HoudiniTheme
+
 # ========================== Drag/parse helpers ==========================
 
 def _strip_wrappers(text: str) -> str:
@@ -299,8 +301,7 @@ class NodeBatchSetterUI(QtWidgets.QMainWindow):
     """
     def __init__(self):
         super().__init__()
-        self.setParent(hou.qt.mainWindow(), QtCore.Qt.Window)
-        self.setWindowTitle("Node Batch Setter")
+        HoudiniTheme.setup_dialog(self, title="Node Batch Setter", min_width=1200, min_height=820)
         self.resize(1200, 820)
 
         self._ref_node = None

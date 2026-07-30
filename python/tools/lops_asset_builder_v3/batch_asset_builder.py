@@ -29,6 +29,8 @@ from dataclasses import dataclass, field
 from PySide6 import QtWidgets, QtCore, QtGui
 import hou
 
+from ui.houdini_theme import HoudiniTheme
+
 from tools.lops_asset_builder_v3 import lops_asset_builder_cli
 from tools.lops_asset_builder_v3.asset_builder_ui import SimpleProgressDialog
 from tools.lops_asset_builder_v3.texture_variant_detector import TextureVariantDetector
@@ -95,6 +97,18 @@ class AssetScanner:
         r'_\d+$',           # Pure numbered: _1, _2, _3
     ]
 
+    # KB3D-style USD role files (geo/payload/mtl layers in Models/ folders)
+    USD_ROLE_EXCLUDE_DEFAULT = ('mtl.usd', 'mtl.usdc', 'mtl.usda')
+    USD_ROLE_FILES = frozenset({
+        'geo.usd', 'geo.usdc', 'geo.usda',
+        'payload.usd', 'payload.usdc', 'payload.usda',
+    })
+    DEFAULT_USD_PRIMARY_PRIORITY = (
+        '{folder_name}.usd',
+        'geo.usd', 'geo.usdc', 'geo.usda',
+        'payload.usd', 'payload.usdc', 'payload.usda',
+    )
+
     def _load_geo_variant_config(self):
         """Load configurable geo variant suffixes and regex patterns.
 
@@ -107,7 +121,9 @@ class AssetScanner:
            {
              "mode": "extend" | "override",
              "suffixes": ["_high", "_low", "_lod0"],
-             "patterns": [r"_[A-Z]$", r"_v\\d+$"]
+             "patterns": [r"_[A-Z]$", r"_v\\d+$"],
+             "usd_primary_priority": ["{folder_name}.usd", "geo.usd", "payload.usd"],
+             "usd_exclude": ["mtl.usd", "mtl.usdc"]
            }
         """
         try:
@@ -116,6 +132,7 @@ class AssetScanner:
             cfg_path = os.path.join(os.path.dirname(__file__), "geo_variant_config.json")
             file_suffixes = []
             file_patterns = []
+            data = {}
             if os.path.exists(cfg_path):
                 import json
                 with open(cfg_path, "r") as f:
@@ -173,6 +190,12 @@ class AssetScanner:
                     seen_p.add(p)
             self.variant_suffixes = merged_suffixes
             self.variant_patterns = merged_patterns
+            if isinstance(data.get("usd_exclude"), list):
+                self.usd_exclude = {str(x).lower() for x in data["usd_exclude"] if str(x)}
+            if isinstance(data.get("usd_primary_priority"), list):
+                pri = [str(x) for x in data["usd_primary_priority"] if str(x)]
+                if pri:
+                    self.usd_primary_priority = pri
         except Exception:
             # On any error, keep defaults already copied in __init__
             pass
@@ -192,6 +215,8 @@ class AssetScanner:
         # Geo variant suffix/pattern config (instance-level, configurable)
         self.variant_suffixes: List[str] = list(self.VARIANT_SUFFIXES)
         self.variant_patterns: List[str] = list(self.VARIANT_PATTERNS)
+        self.usd_exclude = {x.lower() for x in self.USD_ROLE_EXCLUDE_DEFAULT}
+        self.usd_primary_priority = list(self.DEFAULT_USD_PRIMARY_PRIORITY)
         self._load_geo_variant_config()
 
     def scan_folder(self, folder_path: str, recursive: bool = False) -> List[DetectedAsset]:
@@ -254,10 +279,143 @@ class AssetScanner:
 
         return False
 
+    def _is_usd_file(self, filename: str) -> bool:
+        lower = filename.lower()
+        return lower.endswith(('.usd', '.usda', '.usdc'))
+
+    def _usd_basename_lower(self, filename: str) -> str:
+        return filename.lower()
+
+    def _is_usd_excluded(self, filename: str) -> bool:
+        return self._usd_basename_lower(filename) in self.usd_exclude
+
+    def _is_usd_role_file(self, filename: str) -> bool:
+        return self._usd_basename_lower(filename) in self.USD_ROLE_FILES
+
+    def _is_folder_wrapper_usd(self, filename: str, folder_name: str) -> bool:
+        if not self._is_usd_file(filename):
+            return False
+        stem = os.path.splitext(filename)[0]
+        return stem.lower() == folder_name.lower()
+
+    def _is_kb3d_usd_layout(self, geo_files: List[str]) -> bool:
+        """True when folder looks like a KB3D Models component (geo/payload/mtl layers)."""
+        for filename in geo_files:
+            if self._is_usd_role_file(filename) or self._is_usd_excluded(filename):
+                return True
+        return False
+
+    def _select_primary_geometry_file(
+        self, folder_path: str, geo_files: List[str]
+    ) -> Tuple[Optional[str], List[str]]:
+        """
+        Pick one primary geometry file for a KB3D-style folder.
+
+        Priority (configurable via geo_variant_config.json):
+          1. {FolderName}.usd wrapper
+          2. geo.usd
+          3. payload.usd
+
+        Excludes mtl.usd from consideration. Remaining geometry files become variants.
+        """
+        folder_name = os.path.basename(folder_path.rstrip('/\\'))
+        eligible = [f for f in geo_files if not self._is_usd_excluded(f)]
+
+        primary: Optional[str] = None
+        for pattern in self.usd_primary_priority:
+            pat_lower = pattern.lower()
+            if '{folder_name}' in pat_lower:
+                for candidate in eligible:
+                    if self._is_folder_wrapper_usd(candidate, folder_name):
+                        primary = candidate
+                        break
+            else:
+                for candidate in eligible:
+                    if self._usd_basename_lower(candidate) == pat_lower:
+                        primary = candidate
+                        break
+            if primary:
+                break
+
+        variants: List[str] = []
+        for filename in geo_files:
+            if filename == primary:
+                continue
+            if self._is_usd_excluded(filename):
+                continue
+            if self._is_usd_role_file(filename):
+                continue
+            variants.append(filename)
+
+        return primary, variants
+
+    def _sort_variant_filenames(self, variants: List[str]) -> List[str]:
+        """Sort variant filenames deterministically (same rules as LOD/letter variants)."""
+
+        def _variant_sort_key(filename: str):
+            _bn, suf = self._extract_base_and_suffix(filename)
+            s = suf or ""
+            s_low = s.lower()
+            m = re.match(r'^_([A-Za-z])$', s)
+            if m:
+                return (0, ord(m.group(1).upper()) - ord('A'))
+            m = re.match(r'^_(\d+)$', s)
+            if m:
+                return (1, int(m.group(1)))
+            m = re.match(r'^_v(\d+)$', s_low)
+            if m:
+                return (2, int(m.group(1)))
+            if s_low in ['_high', '_mid', '_low']:
+                order = {'_high': 0, '_mid': 1, '_low': 2}
+                return (3, order[s_low])
+            m = re.match(r'^_lod(\d+)$', s_low)
+            if m:
+                return (4, int(m.group(1)))
+            known_suffixes = ['_proxy', '_render', '_sim', '_hero', '_background']
+            if s_low in known_suffixes:
+                return (5, known_suffixes.index(s_low))
+            return (9, filename.lower())
+
+        return sorted(variants, key=_variant_sort_key)
+
+    def _analyze_kb3d_folder(self, folder_path: str, geo_files: List[str]):
+        """Analyze a KB3D Models folder as a single asset (one entry per subfolder)."""
+        folder_name = os.path.basename(folder_path.rstrip('/\\'))
+        primary, variants = self._select_primary_geometry_file(folder_path, geo_files)
+        if not primary:
+            return
+
+        variants = self._sort_variant_filenames(variants)
+        suffixes = [
+            self._extract_base_and_suffix(v)[1]
+            for v in variants
+            if self._extract_base_and_suffix(v)[1]
+        ]
+
+        main_textures, material_variants = self._find_material_variants(folder_path)
+        if not main_textures:
+            main_textures = self._find_texture_folder(folder_path)
+
+        detected_suffix = self._detect_common_suffix(suffixes)
+
+        self.detected_assets.append(DetectedAsset(
+            name=folder_name,
+            main_file=os.path.join(folder_path, primary),
+            base_path=folder_path,
+            geo_variants=[os.path.join(folder_path, v) for v in variants],
+            texture_path=main_textures,
+            material_variants=material_variants,
+            detected_suffix=detected_suffix,
+        ))
+
     def _analyze_folder(self, folder_path: str, geo_files: List[str]):
         """Analyze geometry files in a folder to detect main asset and variants."""
 
-        # Group files by base name
+        if self._is_kb3d_usd_layout(geo_files):
+            self._analyze_kb3d_folder(folder_path, geo_files)
+            return
+
+        # Group files by base name (ABC/FBX/OBJ/BGEO with LOD suffixes)
         asset_groups = {}
 
         for geo_file in geo_files:
@@ -518,6 +676,10 @@ class BatchUIProgressReporter:
         # Not used; total is set by the caller using precomputed tasks
         return
 
+    def ensure_total(self, minimum: int) -> None:
+        # Batch mode uses precomputed task counts on the dialog directly.
+        return
+
     def step(self, message: str = None):
         if self.is_cancelled():
             raise KeyboardInterrupt("Cancelled by user")
@@ -641,10 +803,8 @@ class ConfigGeneratorDialog(QtWidgets.QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("LOPS Batch Asset Builder")
+        HoudiniTheme.setup_dialog(self, title="LOPS Batch Asset Builder", min_width=720, min_height=675)
         self.setModal(False)
-        # Increase overall UI height by ~25% for better visibility
-        self.resize(720, 675)
 
         self.scanner = AssetScanner()
         self.detected_assets: List[DetectedAsset] = []
@@ -689,8 +849,9 @@ class ConfigGeneratorDialog(QtWidgets.QDialog):
 
         # Textures folder selection
         tex_layout = QtWidgets.QHBoxLayout()
-        tex_layout.addWidget(QtWidgets.QLabel("Textures Folder (optional):"))
+        tex_layout.addWidget(QtWidgets.QLabel("Textures Folder:"))
         self.textures_edit = QtWidgets.QLineEdit()
+        self.textures_edit.setToolTip("Optional. Used to locate material texture folders during scan.")
         tex_layout.addWidget(self.textures_edit)
         self.btn_browse_textures = QtWidgets.QPushButton("Browse…")
         self.btn_browse_textures.clicked.connect(self._browse_textures_folder)
@@ -751,9 +912,25 @@ class ConfigGeneratorDialog(QtWidgets.QDialog):
         controls_layout.addSpacing(10)
         controls_layout.addWidget(QtWidgets.QLabel("Sort:"))
         self.sort_combo = QtWidgets.QComboBox()
-        self.sort_combo.addItems(["Name A→Z", "Name Z→A"]) 
+        self.sort_combo.addItems(["Name A→Z", "Name Z→A"])
         self.sort_combo.currentIndexChanged.connect(self._apply_filter_and_sort)
         controls_layout.addWidget(self.sort_combo)
+
+        controls_layout.addSpacing(10)
+        controls_layout.addWidget(QtWidgets.QLabel("File Type:"))
+        self.file_type_combo = QtWidgets.QComboBox()
+        self.file_type_combo.addItems([
+            "All Files",
+            ".usd / .usda / .usdc",
+            ".bgeo.sc",
+            ".abc (Alembic)",
+            ".fbx",
+            ".obj"
+        ])
+        self.file_type_combo.setToolTip("Filter assets by file extension")
+        self.file_type_combo.currentIndexChanged.connect(self._apply_filter_and_sort)
+        controls_layout.addWidget(self.file_type_combo)
+
         controls_layout.addStretch()
         results_layout.addLayout(controls_layout)
 
@@ -1180,7 +1357,7 @@ class ConfigGeneratorDialog(QtWidgets.QDialog):
             self.asset_list.addItem(item)
 
     def _apply_filter_and_sort(self):
-        """Filter detected assets by search text and sort by name asc/desc, then populate list,
+        """Filter detected assets by search text, file type, and sort by name asc/desc, then populate list,
         preserving current selections when possible (e.g., when clearing the search bar)."""
         # Capture currently selected items' stable keys (use main_file path which is unique per asset)
         selected_keys = set()
@@ -1194,7 +1371,7 @@ class ConfigGeneratorDialog(QtWidgets.QDialog):
 
         assets = list(self.detected_assets) if self.detected_assets else []
 
-        # Filter
+        # Filter by search text
         query = ""
         try:
             query = (self.search_edit.text() or "").strip().lower()
@@ -1202,6 +1379,25 @@ class ConfigGeneratorDialog(QtWidgets.QDialog):
             query = ""
         if query:
             assets = [a for a in assets if query in a.name.lower()]
+
+        # Filter by file type
+        file_type_idx = 0
+        try:
+            file_type_idx = self.file_type_combo.currentIndex()
+        except Exception:
+            file_type_idx = 0
+
+        if file_type_idx > 0:  # 0 = "All Files"
+            if file_type_idx == 1:  # .usd / .usda / .usdc
+                assets = [a for a in assets if a.main_file.lower().endswith(('.usd', '.usda', '.usdc'))]
+            elif file_type_idx == 2:  # .bgeo.sc
+                assets = [a for a in assets if a.main_file.lower().endswith('.bgeo.sc')]
+            elif file_type_idx == 3:  # .abc
+                assets = [a for a in assets if a.main_file.lower().endswith('.abc')]
+            elif file_type_idx == 4:  # .fbx
+                assets = [a for a in assets if a.main_file.lower().endswith('.fbx')]
+            elif file_type_idx == 5:  # .obj
+                assets = [a for a in assets if a.main_file.lower().endswith('.obj')]
 
         # Sort
         desc = False

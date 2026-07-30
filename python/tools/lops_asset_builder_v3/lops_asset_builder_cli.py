@@ -155,6 +155,11 @@ class ConsoleProgressReporter:
     def set_total(self, total: int):
         self._total = max(1, int(total))
 
+    def ensure_total(self, minimum: int) -> None:
+        minimum = max(1, int(minimum))
+        if self._total < minimum:
+            self.set_total(minimum)
+
     def step(self, message: str = None):
         self._step += 1
         if self._cancelled:

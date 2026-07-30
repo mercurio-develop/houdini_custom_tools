@@ -5,6 +5,7 @@ import shutil
 from datetime import datetime
 
 from PySide6 import QtCore, QtGui, QtWidgets, QtUiTools
+from ui.houdini_theme import HoudiniTheme
 
 class SceneCacheManagerUI(QtWidgets.QMainWindow):
     # CONST
@@ -24,10 +25,12 @@ class SceneCacheManagerUI(QtWidgets.QMainWindow):
         super().__init__()
         script_path = hou.text.expandString("$CUSTOM_TOOLS/ui/scene_cache_manager.ui")
         self.ui = QtUiTools.QUiLoader().load(script_path, parentWidget=self)
-        self.setParent(hou.qt.mainWindow(), QtCore.Qt.Window)
-        self.setWindowTitle("Scene Cache Manager")
-        self.setMinimumWidth(1200)
-        self.setMinimumHeight(400)
+        HoudiniTheme.setup_dialog(
+            self,
+            title="Scene Cache Manager",
+            min_width=1200,
+            min_height=400,
+        )
         self._init_ui()
         self._setup_connections()
         self.total_cache_size = 0
@@ -43,6 +46,8 @@ class SceneCacheManagerUI(QtWidgets.QMainWindow):
         self.scan_scene = self.ui.findChild(QtWidgets.QPushButton, 'bt_scan')
         self.show_explorer = self.ui.findChild(QtWidgets.QPushButton,'bt_reveal')
         self.clean_old = self.ui.findChild(QtWidgets.QPushButton, 'bt_cleanup')
+
+        HoudiniTheme.apply(self.ui)
 
         #Enable Alphabetic Order
         self.cache_tree.setSortingEnabled(True)

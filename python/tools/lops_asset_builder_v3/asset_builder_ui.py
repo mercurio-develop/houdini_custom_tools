@@ -22,6 +22,8 @@ import os
 
 from PySide6 import QtWidgets, QtCore, QtGui
 
+from ui.houdini_theme import HoudiniTheme
+
 # Keep strong references to active progress reporters to prevent dialogs
 # from being garbage-collected (and auto-closing) when build functions return.
 _LIVE_REPORTERS: list["ProgressReporter"] = []
@@ -48,7 +50,7 @@ class _ListEditor(QtWidgets.QWidget):
         self.listw = QtWidgets.QListWidget(self)
         self.listw.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         # Improve visibility of long paths and overall height
-        self.listw.setMinimumHeight(160)
+        self.listw.setMinimumHeight(100)
         self.listw.setSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Expanding)
         self.listw.setTextElideMode(QtCore.Qt.TextElideMode.ElideMiddle)
         self.listw.setUniformItemSizes(True)
@@ -117,13 +119,14 @@ class AssetMaterialVariantsDialog(QtWidgets.QDialog):
 
     def __init__(self, default_asset: str = "", default_maps: str = "", parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setWindowTitle("LOPS Asset Builder")
+        HoudiniTheme.setup_dialog(self, title="LOPS Asset Builder", min_width=560, min_height=480)
         self.setModal(True)
         self._build_ui(default_asset, default_maps)
 
     def _build_ui(self, default_asset: str, default_maps: str) -> None:
         lay = QtWidgets.QVBoxLayout(self)
         form = QtWidgets.QFormLayout()
+        HoudiniTheme.apply_form_layout(form)
 
         # Main Asset File Path
         self.ed_main_asset = QtWidgets.QLineEdit(default_asset or "")
@@ -181,7 +184,12 @@ class AssetMaterialVariantsDialog(QtWidgets.QDialog):
 
         # Material Variant Folders list
         self.maps_list = _ListEditor(self, mode="dir")
-        form.addRow("Material Variant Folders (optional - auto-detected if empty)", self.maps_list)
+        self.maps_list.setToolTip(
+            "Optional. Leave empty to auto-detect material variant folders from the main textures folder."
+        )
+        lbl_material_variants = QtWidgets.QLabel("Material Variant Folders")
+        lbl_material_variants.setToolTip(self.maps_list.toolTip())
+        form.addRow(lbl_material_variants, self.maps_list)
 
         # Replace the default 'Add' button with 'Add Folders…' using the same button (size/position)
         try:
@@ -340,7 +348,7 @@ class AssetMaterialVariantsDialog(QtWidgets.QDialog):
 class SimpleProgressDialog(QtWidgets.QDialog):
     def __init__(self, title="LOPs Asset Builder v3", parent=None):
         super().__init__(parent)
-        self.setWindowTitle(title)
+        HoudiniTheme.setup_dialog(self, title=title, min_width=700, min_height=640)
         self.setModal(False)
         # Make the dialog larger by default (about ~25% bigger) and easier to resize while working
         try:
@@ -406,6 +414,10 @@ class SimpleProgressDialog(QtWidgets.QDialog):
         layout.addLayout(btn_row)
         self._max = 100
         self.progress_bar.setRange(0, self._max)
+        try:
+            self.progress_bar.setFormat("%p%")
+        except Exception:
+            pass
         # Internal flags
         self.cancelled = False
         self.finished = False
@@ -510,6 +522,12 @@ class ProgressReporter:
         self._total = max(1, int(total))
         if self._use_qt:
             self._dialog.set_total(self._total)
+
+    def ensure_total(self, minimum: int) -> None:
+        """Raise the step budget if the caller set it too low (e.g. before material creation)."""
+        minimum = max(1, int(minimum))
+        if self._total < minimum:
+            self.set_total(minimum)
 
     def step(self, message: str = None):
         self._step += 1

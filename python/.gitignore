@@ -57,5 +57,18 @@ node_modules/
 # Documentation (session notes and updates - not part of the codebase)
 docs/
 
-# Keep CLAUDE.md for AI code assistant
-.claudeignore
+# Tracked architecture overview lives at repo root of python/
+!ARCHITECTURE.md
+
+# Integration secrets (copy from integrations.example.json)
+integrations.json
+config/integrations.json
+
+# Optional vendored wheels for Houdini
+vendor/
+python/vendor/
+
+# IDE / caches (do not commit)
+.claude/
+.idea/
+.pytest_cache/

@@ -1,6 +1,6 @@
 import hou
 from tools import lops_light_rig
-from tools.lops_asset_builder_v2.lops_asset_builder_v2 import create_camera_lookdev, create_karma_nodes
+from tools.lops_asset_builder_v3.lops_asset_builder_v3 import create_camera_lookdev, create_karma_nodes
 
 
 def setup_light_rig_pipeline(stage_context=None, target_node=None, scope_name=None, auto_prompt=True):

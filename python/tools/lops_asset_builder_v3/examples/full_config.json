@@ -1,0 +1,27 @@
+{
+  "_comment": "Complete configuration with all options enabled",
+  "main_asset_file_path": "$JOB/assets/characters/robot/robot_high.abc",
+  "folder_textures": "$JOB/assets/characters/robot/textures/default",
+  "asset_name": "Robot",
+  "asset_variants": [
+    "$JOB/assets/characters/robot/robot_mid.abc",
+    "$JOB/assets/characters/robot/robot_low.abc"
+  ],
+  "asset_vset_name": "lod_variant",
+  "mtl_variants": [
+    "$JOB/assets/characters/robot/textures/rusty",
+    "$JOB/assets/characters/robot/textures/clean",
+    "$JOB/assets/characters/robot/textures/battle_damaged"
+  ],
+  "mtl_vset_name": "look_variant",
+  "create_lookdev": true,
+  "create_light_rig": true,
+  "enable_env_lights": true,
+  "env_light_paths": [
+    "$JOB/hdri/studio_01.exr",
+    "$JOB/hdri/outdoor_01.exr",
+    "$JOB/hdri/night_01.exr"
+  ],
+  "stage_context_path": "/stage",
+  "verbose": true
+}

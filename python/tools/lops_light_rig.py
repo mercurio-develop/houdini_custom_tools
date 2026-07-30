@@ -17,6 +17,12 @@ def create_three_point_light(selected_node=None):
 
     # Get the bounding box for the asset
     bounds = misc_utils.calculate_prim_bounds(target_node)
+    if bounds is None:
+        raise hou.NodeError(
+            "Could not compute asset bounds for the light rig. "
+            "Ensure the component output has a valid USD stage with a default prim, "
+            "or cook the network before running the builder."
+        )
 
     # Caclculate the center and dimension
     center = bounds["center"]

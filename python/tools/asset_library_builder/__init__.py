@@ -1,32 +1,11 @@
 """
 Asset Library Builder - USD Asset Library Pipeline
 
-A comprehensive tool for building production-ready USD asset libraries with:
-- Proper payload/geometry/material structure
-- Texture resolution variants (jpg1k, jpg2k, png4k)
-- Automatic instanceable detection
-- Material library with MaterialX shaders
-- Batch processing workflows
+Canonical **parts → assembly** API: ``asset_builder.build_from_parts``.
 
-Main Components:
-    - asset_builder.py: Core builder that creates USD structure from parts
-    - asset_builder_ui.py: PySide6 UI for interactive building
-    - asset_builder_shelf.py: Houdini shelf tool integration
+For the primary KB3D assembly shelf UI, use::
 
-Usage:
-    From Python Shell:
-        from tools.asset_library_builder import show_ui
-        show_ui()
-
-    Or programmatically:
-        from tools.asset_library_builder.asset_builder import build_from_parts
-
-        build_from_parts(
-            parts_folder="/path/to/parts",
-            asset_name="MyAsset",
-            models_folder="/path/to/Models",
-            materials_folder="/path/to/Materials"
-        )
+    from tools.kb3d_tools import show_assembly_ui
 """
 
 __version__ = "1.1.0"  # Now uses mesh names directly as material names (no conversion)

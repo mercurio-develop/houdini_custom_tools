@@ -1,0 +1,25 @@
+[
+  {
+    "_comment": "Full config object #1",
+    "main_asset_file_path": "$JOB/assets/props/chair/chair.abc",
+    "folder_textures": "$JOB/assets/props/chair/textures",
+    "asset_name": "Chair",
+    "create_lookdev": false
+  },
+  {
+    "_comment": "Full config object #2",
+    "main_asset_file_path": "$JOB/assets/props/table/table.abc",
+    "folder_textures": "$JOB/assets/props/table/textures",
+    "asset_name": "Table",
+    "create_lookdev": false
+  },
+  {
+    "_comment": "Full config object #3",
+    "main_asset_file_path": "$JOB/assets/props/lamp/lamp.abc",
+    "folder_textures": "$JOB/assets/props/lamp/textures",
+    "asset_name": "Lamp",
+    "create_lookdev": true,
+    "create_light_rig": true,
+    "enable_env_lights": false
+  }
+]
