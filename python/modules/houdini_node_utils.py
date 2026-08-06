@@ -1,5 +1,20 @@
 """Safe helpers for Houdini node/parm setup (H21→H22 compatibility)."""
 
+import gc
+from contextlib import contextmanager
+
+
+@contextmanager
+def suppress_gc_during_cook():
+    """Prevent Python GC from destroying Qt wrappers while Houdini cooks LOP/VOP nodes."""
+    was_enabled = gc.isenabled()
+    gc.disable()
+    try:
+        yield
+    finally:
+        if was_enabled:
+            gc.enable()
+
 
 def safe_parm(node, name):
     if node is None:

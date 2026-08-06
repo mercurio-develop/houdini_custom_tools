@@ -10,7 +10,7 @@ ENV/
 .python-version
 
 # Environment files
-.env
+integrations/.env
 .env.*
 .envrc
 

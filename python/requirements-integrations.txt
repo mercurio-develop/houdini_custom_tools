@@ -1,4 +1,5 @@
 # Production Hub integrations (Houdini external venv, MCP, FastAPI)
+python-dotenv>=1.0.0
 httpx>=0.27.0
 ftrack-python-api>=2.5.0
 mcp>=1.2.0

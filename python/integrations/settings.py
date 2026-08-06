@@ -3,9 +3,20 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
+import warnings
 from dataclasses import dataclass
 from typing import Any, Optional
+
+try:
+    from dotenv import load_dotenv as _load_dotenv
+except ImportError:
+    _load_dotenv = None
+
+logger = logging.getLogger(__name__)
+
+_INTEGRATIONS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def _expand_path(path: str) -> str:
@@ -33,6 +44,39 @@ def _config_search_paths() -> list[str]:
     return paths
 
 
+def _dotenv_search_paths() -> list[str]:
+    paths: list[str] = []
+    env_path = os.environ.get("INTEGRATIONS_ENV_FILE", "").strip()
+    if env_path:
+        paths.append(_expand_path(env_path))
+    paths.append(os.path.join(_INTEGRATIONS_DIR, ".env"))
+    custom = os.environ.get("CUSTOM_TOOLS", "")
+    if custom:
+        paths.append(os.path.join(custom, "scripts", "python", "integrations", ".env"))
+    return paths
+
+
+def _load_dotenv_files() -> Optional[str]:
+    """Load the first existing .env file into os.environ (shell exports win)."""
+    if _load_dotenv is None:
+        for path in _dotenv_search_paths():
+            if path and os.path.isfile(path):
+                warnings.warn(
+                    f"Found integrations env file at {path} but python-dotenv is not installed. "
+                    "Install python-dotenv or export variables in the shell.",
+                    stacklevel=2,
+                )
+                return None
+        return None
+
+    for path in _dotenv_search_paths():
+        if path and os.path.isfile(path):
+            _load_dotenv(path, override=False)
+            logger.debug("Loaded integrations env from %s", path)
+            return path
+    return None
+
+
 @dataclass(frozen=True)
 class FtrackSettings:
     server_url: str
@@ -50,6 +94,9 @@ class IconikSettings:
     base_url: str
     app_id: str
     auth_token: str
+    storage_id: str = ""
+    upload_chunk_mb: int = 32
+    max_upload_retries: int = 3
 
     def api_base(self) -> str:
         base = self.base_url.rstrip("/")
@@ -88,6 +135,11 @@ class IntegrationSettings:
                     "ICONIK_AUTH_TOKEN",
                     _env_or(ik, "api_key", "ICONIK_API_KEY", ""),
                 ),
+                storage_id=_env_or(ik, "storage_id", "ICONIK_STORAGE_ID", ""),
+                upload_chunk_mb=int(_env_or(ik, "upload_chunk_mb", "ICONIK_UPLOAD_CHUNK_MB", "32") or "32"),
+                max_upload_retries=int(
+                    _env_or(ik, "max_upload_retries", "ICONIK_MAX_UPLOAD_RETRIES", "3") or "3"
+                ),
             ),
             publish_location_name=str(data.get("publish_location_name", "auto")),
         )
@@ -120,7 +172,8 @@ def _env_or(section: dict[str, Any], json_key: str, env_key: str, default: str) 
 
 
 def load_settings(config_path: Optional[str] = None) -> IntegrationSettings:
-    """Merge JSON config (if present) with environment variables (env wins)."""
+    """Merge .env (if present), JSON config (if present), and environment variables (env wins)."""
+    _load_dotenv_files()
     merged: dict[str, Any] = {}
     paths = [_expand_path(config_path)] if config_path else _config_search_paths()
     for path in paths:
@@ -142,6 +195,9 @@ def example_config_dict() -> dict[str, Any]:
             "base_url": "https://app.iconik.io",
             "app_id": "YOUR_ICONIK_APP_ID",
             "auth_token": "YOUR_ICONIK_AUTH_TOKEN",
+            "storage_id": "YOUR_DEFAULT_FILES_STORAGE_UUID",
+            "upload_chunk_mb": 32,
+            "max_upload_retries": 3,
         },
         "publish_location_name": "auto",
     }

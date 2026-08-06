@@ -28,28 +28,10 @@ def _should_skip_module_path(module_path: str, folder_path: str, exclude_names, 
     return any(seg in norm for seg in excluded_segments)
 
 
-def reload_packages(kwargs):
-    """
-    Reload the custom_tools Houdini package and (on Alt+click) Python modules.
-
-    Args:
-        kwargs (dict): Houdini shelf kwargs; Alt+click sets ``altclick`` to reload modules.
-    """
+def _load_reload_settings(folder_path: str) -> dict:
     import hou
-    import importlib
-    import os
-    import sys
     import json
-
-    folder_path = hou.text.expandString("$CUSTOM_TOOLS/scripts/python")
-    package_path = hou.text.expandString("$HOUDINI_USER_PREF_DIR/packages/") + "custom_tools.json"
-    hou.ui.reloadPackage(package_path)
-
-    altclick = bool(kwargs.get("altclick"))
-    if not altclick:
-        hou.hscript("menurefresh")
-        _reload_shelves()
-        return
+    import os
 
     settings = {}
     candidate_paths = [
@@ -68,7 +50,11 @@ def reload_packages(kwargs):
                 break
         except Exception as e:
             print(f"reload_packages: failed to read settings file {p}: {e}")
+    return settings
 
+
+def _collect_reload_excludes(folder_path: str, settings: dict):
+    """Build folder and module exclude sets from reload_settings.json."""
     exclude_list = settings.get("reload_exclude_dirs", settings.get("exclude_folders", []))
     exclude_names = set()
     exclude_paths = []
@@ -83,11 +69,75 @@ def reload_packages(kwargs):
                 p = item if os.path.isabs(item) else os.path.normpath(os.path.join(folder_path, item))
                 exclude_paths.append(os.path.normpath(p))
 
-    exclude_names |= {".venv", "venv", "env", "site-packages", "dist-packages", "__pycache__"}
+    path_list = settings.get("reload_exclude_paths", [])
+    if isinstance(path_list, list):
+        for item in path_list:
+            if not isinstance(item, str) or not item.strip():
+                continue
+            item = item.strip()
+            p = item if os.path.isabs(item) else os.path.normpath(os.path.join(folder_path, item))
+            exclude_paths.append(os.path.normpath(p))
+
+    exclude_names |= {".venv", "venv", "env", "site-packages", "dist-packages", "__pycache__", "ui"}
+
+    exclude_modules = set(settings.get("reload_exclude_modules", []))
+    exclude_prefixes = tuple(settings.get("reload_exclude_module_prefixes", []))
+
+    return exclude_names, exclude_paths, exclude_modules, exclude_prefixes
+
+
+def _should_skip_module_reload(module_name: str, exclude_modules, exclude_prefixes) -> bool:
+    if module_name == __name__:
+        return True
+    if module_name in exclude_modules:
+        return True
+    return any(module_name == prefix or module_name.startswith(f"{prefix}.") for prefix in exclude_prefixes)
+
+
+def reload_packages(kwargs):
+    """
+    Reload the custom_tools Houdini package and (on Alt+click) Python modules.
+
+    Args:
+        kwargs (dict): Houdini shelf kwargs; Alt+click sets ``altclick`` to reload modules.
+    """
+    import hou
+    import importlib
+    import os
+    import sys
+
+    folder_path = hou.text.expandString("$CUSTOM_TOOLS/scripts/python")
+    package_path = hou.text.expandString("$HOUDINI_USER_PREF_DIR/packages/") + "custom_tools.json"
+    try:
+        hou.ui.reloadPackage(package_path)
+    except Exception as e:
+        print(f"reload_packages: hou.ui.reloadPackage failed: {e}")
+        hou.ui.displayMessage(
+            f"Package reload failed:\n{e}",
+            severity=hou.severityType.Error,
+            title="Reload Packages",
+        )
+        return
+
+    altclick = bool(kwargs.get("altclick"))
+    if not altclick:
+        hou.hscript("menurefresh")
+        _reload_shelves()
+        return
+
+    settings = _load_reload_settings(folder_path)
+    exclude_names, exclude_paths, exclude_modules, exclude_prefixes = _collect_reload_excludes(
+        folder_path, settings
+    )
     print(
         "reload_packages: excluding folders by name "
         f"{sorted(exclude_names)} and paths {exclude_paths}"
     )
+    if exclude_modules or exclude_prefixes:
+        print(
+            "reload_packages: excluding modules "
+            f"{sorted(exclude_modules)} prefixes {exclude_prefixes}"
+        )
 
     module_files = []
     package_inits = []
@@ -119,7 +169,7 @@ def reload_packages(kwargs):
                 module_files.append((module_name, module_path))
 
     # Ensure top-level packages exist before reloading submodules.
-    for pkg in ("tools", "pipeline", "modules", "ui"):
+    for pkg in ("tools", "pipeline", "modules"):
         pkg_init = os.path.join(folder_path, pkg, "__init__.py")
         if os.path.isfile(pkg_init):
             try:
@@ -128,6 +178,8 @@ def reload_packages(kwargs):
                 print(f"reload_packages: warning: could not import package {pkg}: {e}")
 
     def _reload_one(module_name: str) -> None:
+        if _should_skip_module_reload(module_name, exclude_modules, exclude_prefixes):
+            return
         mod = sys.modules.get(module_name)
         if mod is None:
             # Never import unknown modules during reload (dev/test scripts run on import).
@@ -158,11 +210,11 @@ def reload_packages(kwargs):
 def _reload_shelves() -> None:
     import hou
 
-    path_shelves = hou.text.expandString("$CUSTOM_TOOLS/toolbar")
-    for root, _dir, files in os.walk(path_shelves):
-        for file in files:
-            if file.endswith(".shelf"):
-                hou.shelves.loadFile(os.path.join(root, file))
+    try:
+        # loadFile() adds duplicate shelf tools and can crash Houdini; reload in place instead.
+        hou.shelves.reloadShelfFiles()
+    except Exception as e:
+        print(f"reload_packages: hou.shelves.reloadShelfFiles failed: {e}")
 
 
 def check_path_valid(path):

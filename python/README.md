@@ -2,7 +2,8 @@
 
 Python tools for Houdini 21.x: USD asset building in LOPS, library authoring, project management, and stage utilities. Structured for clarity when describing pipeline engineering work (PySide UIs, headless CLI, USD/asset workflows).
 
-**Architecture:** See [ARCHITECTURE.md](ARCHITECTURE.md).
+**Architecture:** See [ARCHITECTURE.md](ARCHITECTURE.md).  
+**Shelf audit & refactor plan:** See [SHELF_AUDIT.md](SHELF_AUDIT.md).
 
 ## Setup
 

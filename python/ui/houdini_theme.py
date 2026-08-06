@@ -44,6 +44,8 @@ class HoudiniTheme:
 
         defaults = {
             "background": "#2b2b2b",
+            "surface": "#353535",
+            "input_background": "#1a1a1a",
             "text": "#e6e6e6",
             "text_secondary": "#c8c8c8",
             "text_muted": "#909090",
@@ -64,7 +66,10 @@ class HoudiniTheme:
             app = QtWidgets.QApplication.instance()
             if app is not None:
                 pal = app.palette()
-                defaults["background"] = pal.color(QtGui.QPalette.ColorRole.Window).name()
+                window = pal.color(QtGui.QPalette.ColorRole.Window)
+                defaults["background"] = window.name()
+                defaults["surface"] = window.lighter(112).name()
+                defaults["input_background"] = window.darker(125).name()
                 defaults["text"] = pal.color(QtGui.QPalette.ColorRole.WindowText).name()
                 defaults["text_secondary"] = pal.color(QtGui.QPalette.ColorRole.Text).name()
                 defaults["border"] = pal.color(QtGui.QPalette.ColorRole.Mid).name()
@@ -104,13 +109,37 @@ class HoudiniTheme:
         title: str | None = None,
         min_width: int | None = None,
         min_height: int | None = None,
+        resizable: bool = False,
     ) -> None:
         """Style a modal QDialog that already has hou.qt.mainWindow() as parent."""
         if title:
             widget.setWindowTitle(title)
         widget.setMinimumWidth(min_width or cls.LAYOUT["dialog_min_width"])
         widget.setMinimumHeight(min_height or cls.LAYOUT["dialog_min_height"])
+        if resizable:
+            cls._enable_window_resize(widget)
         cls.apply(widget)
+
+    @classmethod
+    def _enable_window_resize(cls, widget: QtWidgets.QWidget) -> None:
+        """Allow minimize/maximize and user resizing on modal tool dialogs."""
+        try:
+            widget.setWindowFlags(
+                QtCore.Qt.WindowType.Window
+                | QtCore.Qt.WindowType.WindowTitleHint
+                | QtCore.Qt.WindowType.WindowSystemMenuHint
+                | QtCore.Qt.WindowType.WindowCloseButtonHint
+                | QtCore.Qt.WindowType.WindowMinimizeButtonHint
+                | QtCore.Qt.WindowType.WindowMaximizeButtonHint
+            )
+            widget.setMaximumSize(16777215, 16777215)
+            widget.setSizeGripEnabled(True)
+            widget.setSizePolicy(
+                QtWidgets.QSizePolicy.Policy.Expanding,
+                QtWidgets.QSizePolicy.Policy.Expanding,
+            )
+        except Exception:
+            pass
 
     @classmethod
     def center_on_houdini(cls, widget: QtWidgets.QWidget) -> None:
@@ -174,6 +203,29 @@ class HoudiniTheme:
             )
 
     @classmethod
+    def secondary_button_stylesheet(cls) -> str:
+        c = cls.colors()
+        return (
+            f"QPushButton {{ background-color: {c['surface']}; color: {c['text']}; "
+            f"border: 1px solid {c['border']}; font-weight: normal; padding: 4px 10px; }}"
+            f"QPushButton:hover {{ background-color: {c['hover']}; border-color: {c['accent_primary']}; }}"
+            f"QPushButton:disabled {{ color: {c['disabled_text']}; border-color: {c['disabled']}; }}"
+        )
+
+    @classmethod
+    def primary_button_stylesheet(cls) -> str:
+        c = cls.colors()
+        return (
+            f"QPushButton {{ background-color: {c['accent_primary']}; color: #ffffff; "
+            f"border: 1px solid {c['accent_primary']}; font-weight: bold; "
+            f"padding: 5px 14px; min-height: 26px; }}"
+            f"QPushButton:hover {{ background-color: {c['accent_secondary']}; "
+            f"border-color: {c['accent_secondary']}; color: #ffffff; }}"
+            f"QPushButton:disabled {{ background-color: {c['disabled']}; "
+            f"color: {c['disabled_text']}; border-color: {c['disabled']}; }}"
+        )
+
+    @classmethod
     def apply(cls, widget: QtWidgets.QWidget) -> None:
         c = cls.colors()
         widget.setStyleSheet(
@@ -187,7 +239,7 @@ class HoudiniTheme:
                 color: {c["text"]};
             }}
             QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox, QComboBox {{
-                background-color: {c["background"]};
+                background-color: {c["input_background"]};
                 color: {c["text"]};
                 border: 1px solid {c["border"]};
                 border-radius: {cls.LAYOUT["border_radius"]}px;
@@ -196,17 +248,22 @@ class HoudiniTheme:
             }}
             QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus, QComboBox:focus {{
                 border: 1px solid {c["border_focus"]};
+                background-color: {c["input_background"]};
             }}
             QListWidget, QTreeWidget, QTableWidget {{
-                background-color: {c["background"]};
+                background-color: {c["input_background"]};
                 color: {c["text"]};
                 border: 1px solid {c["border"]};
                 border-radius: {cls.LAYOUT["border_radius"]}px;
                 min-height: {cls.LAYOUT["list_min_height"]}px;
             }}
-            QPushButton {{
+            QListWidget::item:selected, QTreeWidget::item:selected, QTableWidget::item:selected {{
                 background-color: {c["accent_primary"]};
                 color: {c["background"]};
+            }}
+            QPushButton {{
+                background-color: {c["accent_primary"]};
+                color: #ffffff;
                 border: 1px solid {c["accent_primary"]};
                 border-radius: {cls.LAYOUT["border_radius"]}px;
                 padding: 4px 12px;
@@ -230,16 +287,24 @@ class HoudiniTheme:
             }}
             QGroupBox {{
                 color: {c["text"]};
+                background-color: {c["surface"]};
                 border: 1px solid {c["border"]};
                 border-radius: {cls.LAYOUT["border_radius"]}px;
-                margin-top: 10px;
-                padding-top: 8px;
+                margin-top: 12px;
+                padding: 12px 10px 10px 10px;
             }}
             QGroupBox::title {{
                 color: {c["accent_primary"]};
+                font-size: {cls.FONTS["header_size"]}px;
+                font-weight: bold;
                 subcontrol-origin: margin;
-                left: 8px;
-                padding: 0 4px;
+                left: 10px;
+                padding: 0 6px;
+                background-color: {c["surface"]};
+            }}
+            QScrollArea {{
+                background-color: {c["background"]};
+                border: none;
             }}
             QProgressBar {{
                 background-color: {c["border"]};
@@ -251,10 +316,6 @@ class HoudiniTheme:
             }}
             QProgressBar::chunk {{
                 background-color: {c["accent_primary"]};
-            }}
-            QScrollArea {{
-                background-color: {c["background"]};
-                border: 1px solid {c["border"]};
             }}
             """
         )

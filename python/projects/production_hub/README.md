@@ -29,6 +29,7 @@ LOPS Asset Builder v3 and local KB3D USD libraries are typical publish sources; 
 | `ICONIK_BASE_URL` | e.g. `https://app.iconik.io` |
 | `ICONIK_APP_ID` | Iconik application ID |
 | `ICONIK_AUTH_TOKEN` | Iconik auth token |
+| `ICONIK_STORAGE_ID` | Optional FILES storage UUID (auto-resolved if empty) |
 | `PRODUCTION_HUB_CONFIG` | Optional path to JSON file |
 
 Install Python deps (venv recommended; Houdini may use `pip install --target`):
@@ -38,6 +39,12 @@ pip install -r requirements-integrations.txt
 ```
 
 Add `scripts/python` to `PYTHONPATH` (or use your existing `$CUSTOM_TOOLS` package).
+
+## Iconik TOPs bulk ingest
+
+Recursive USD scan + upload via PDG — see [`tools/iconik_tops/README.md`](../../tools/iconik_tops/README.md).
+
+PDG workers need the same `integrations.json` / env vars and `PYTHONPATH` as the interactive session.
 
 ## Houdini — open Production Hub
 

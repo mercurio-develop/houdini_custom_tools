@@ -26,10 +26,22 @@
 - [ ] `POST /publish` with sandbox task id + absolute path to `sample_assembly.usda`
 - [ ] MCP: `ftrack_list_tasks` → `publish_usd_deliverable_tool` → `iconik_search_assets`
 
+## TOPs bulk ingest (≈5 min, LinkedIn portfolio clip)
+
+- [ ] `integrations.json` includes Iconik credentials (+ optional `storage_id`)
+- [ ] CLI dry-run: `python -m tools.iconik_tops.iconik_ingest_cli scan --root /library --mode primary --recursive`
+- [ ] CLI dry-run ingest: `... ingest --root /library --dry-run --limit 3`
+- [ ] Houdini: **Custom Tools → Iconik USD Ingest TOPs** → pick library root
+- [ ] Cook with **Dry Run ON** — confirm work items + manifest CSV under `$HIP`
+- [ ] Disable dry run → cook 1–3 files → verify originals in Iconik UI
+- [ ] Re-cook same paths with **On Exists = Skip** — no duplicate assets
+- [ ] Search Iconik by `kb3d_asset_code` or `usd_path` metadata
+
 ## Talking points
 
 - ftrack owns **task + version**; Iconik owns **searchable MAM metadata**; Houdini owns **USD creation**
 - Same [`publish_usd_deliverable`](../../integrations/workflows/publish_usd_deliverable.py) for UI, API, MCP
+- TOPs ingest reuses [`integrations/usd_discovery.py`](../../integrations/usd_discovery.py) + [`integrations/iconik/upload.py`](../../integrations/iconik/upload.py)
 - [`integrations/identifiers/`](../../integrations/identifiers/) maps shot/parent + KB3D-style names into Iconik fields
 
 See [VFX_PIPELINE.md](VFX_PIPELINE.md).

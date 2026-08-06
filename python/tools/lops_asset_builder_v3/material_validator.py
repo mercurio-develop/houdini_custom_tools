@@ -23,6 +23,7 @@ _HOU_GEOMETRY_EXTENSIONS = frozenset({
 _USD_EXTENSIONS = frozenset({".usd", ".usda", ".usdc"})
 # Skip in-memory geometry loads above this size during pre-flight validation
 _MAX_VALIDATION_GEO_BYTES = 256 * 1024 * 1024
+_TEXTURE_MATERIAL_CACHE: dict[tuple[str, bool], frozenset[str]] = {}
 
 
 def _asset_extension(asset_path: str) -> str:
@@ -184,7 +185,11 @@ class MaterialValidationResult:
         return "".join(lines)
 
 
-def extract_material_names_from_geometry(asset_paths: List[str], lowercase: bool = False) -> Set[str]:
+def extract_material_names_from_geometry(
+    asset_paths: List[str],
+    lowercase: bool = False,
+    progress=None,
+) -> Set[str]:
     """Extract material names from geometry files without unsafe loaders."""
     material_names: Set[str] = set()
 
@@ -198,8 +203,24 @@ def extract_material_names_from_geometry(asset_paths: List[str], lowercase: bool
             if ext in _HOU_GEOMETRY_EXTENSIONS:
                 if os.path.getsize(asset_path) > _MAX_VALIDATION_GEO_BYTES:
                     continue
-                material_names.update(_extract_materials_from_hou_geometry(asset_path, lowercase))
+                if progress is not None:
+                    try:
+                        progress.log(f"Reading geometry materials: {os.path.basename(asset_path)}")
+                    except Exception:
+                        pass
+                if progress is not None and hasattr(progress, "suspend_events"):
+                    with progress.suspend_events():
+                        material_names.update(
+                            _extract_materials_from_hou_geometry(asset_path, lowercase)
+                        )
+                else:
+                    material_names.update(_extract_materials_from_hou_geometry(asset_path, lowercase))
             elif ext in _USD_EXTENSIONS:
+                if progress is not None:
+                    try:
+                        progress.log(f"Reading USD materials: {os.path.basename(asset_path)}")
+                    except Exception:
+                        pass
                 material_names.update(_extract_materials_from_usd(asset_path, lowercase))
         except Exception:
             continue
@@ -207,10 +228,19 @@ def extract_material_names_from_geometry(asset_paths: List[str], lowercase: bool
     return material_names
 
 
-def find_available_materials_in_textures(texture_folder: str, lowercase: bool = False) -> Set[str]:
+def find_available_materials_in_textures(
+    texture_folder: str,
+    lowercase: bool = False,
+    progress=None,
+) -> Set[str]:
     """Scan texture folders using the same headless scanner as the builder."""
     if not texture_folder:
         return set()
+
+    cache_key = (os.path.normpath(texture_folder), bool(lowercase))
+    cached = _TEXTURE_MATERIAL_CACHE.get(cache_key)
+    if cached is not None:
+        return set(cached)
 
     from tools.material_tools.TexToMtlX_V2.tex_to_mtlx import TextureFolderScanner
     from modules.misc_utils import MaterialNamingConfig
@@ -219,15 +249,25 @@ def find_available_materials_in_textures(texture_folder: str, lowercase: bool = 
     scanner = TextureFolderScanner(naming_config)
     material_names: Set[str] = set()
 
+    dir_count = 0
     for search_root in resolve_texture_search_roots(texture_folder):
         if not search_root or not os.path.isdir(search_root):
             continue
         for root, _dirs, _files in walk_texture_dirs(search_root):
+            dir_count += 1
+            if progress is not None and dir_count % 40 == 0:
+                try:
+                    progress.log(f"Scanning textures… ({dir_count} folders checked)")
+                    if progress.is_cancelled():
+                        break
+                except Exception:
+                    pass
             if not scanner.folder_with_textures(root):
                 continue
             details = scanner.get_texture_details(root)
             material_names.update(details.keys())
 
+    _TEXTURE_MATERIAL_CACHE[cache_key] = frozenset(material_names)
     return material_names
 
 
@@ -238,6 +278,7 @@ def validate_materials(
     lowercase: bool = False,
     naming_config: MaterialNamingConfig = None,
     skip_geometry_scan: bool = False,
+    progress=None,
 ) -> MaterialValidationResult:
     """
     Validate that geometry materials can be satisfied by available textures.
@@ -264,9 +305,19 @@ def validate_materials(
         result.add_info("Skipping geometry material scan (texture folder validation only)")
     else:
         result.add_info(f"Scanning {len(asset_paths)} geometry file(s)...")
+        if progress is not None:
+            try:
+                progress.step("Scanning geometry for materials")
+            except Exception:
+                pass
         result.materials_expected = extract_material_names_from_geometry(
-            asset_paths, lowercase=naming_config.lowercase
+            asset_paths, lowercase=naming_config.lowercase, progress=progress
         )
+        if progress is not None and hasattr(progress, "flush_ui"):
+            try:
+                progress.flush_ui()
+            except Exception:
+                pass
 
         if not result.materials_expected:
             result.add_info("No material assignments found in geometry files")
@@ -287,7 +338,14 @@ def validate_materials(
     resolved_roots = resolve_texture_search_roots(texture_folder)
     scan_label = resolved_roots[0] if resolved_roots else texture_folder
     result.add_info(f"Scanning texture folder: {scan_label}")
-    result.materials_available = find_available_materials_in_textures(texture_folder, lowercase=naming_config.lowercase)
+    if progress is not None:
+        try:
+            progress.step("Scanning texture folders")
+        except Exception:
+            pass
+    result.materials_available = find_available_materials_in_textures(
+        texture_folder, lowercase=naming_config.lowercase, progress=progress
+    )
 
     # Detect variant folders from the Textures parent when rooted at png4k/jpg4k
     variant_scan_root = texture_folder
@@ -316,7 +374,9 @@ def validate_materials(
 
             if os.path.exists(variant_path) and os.path.isdir(variant_path):
                 result.add_info(f"Scanning variant folder: {os.path.basename(variant_path)}")
-                variant_materials = find_available_materials_in_textures(variant_path, lowercase=naming_config.lowercase)
+                variant_materials = find_available_materials_in_textures(
+                    variant_path, lowercase=naming_config.lowercase, progress=progress
+                )
                 result.materials_available.update(variant_materials)
 
     # Identify missing materials
@@ -347,6 +407,7 @@ def validate_and_warn_user(
     lowercase: bool = False,
     naming_config: MaterialNamingConfig = None,
     skip_geometry_scan: bool = False,
+    progress=None,
 ) -> Tuple[MaterialValidationResult, bool]:
     """
     Validate materials and optionally show warning dialog to user.
@@ -372,6 +433,7 @@ def validate_and_warn_user(
         texture_variants,
         naming_config=naming_config,
         skip_geometry_scan=skip_geometry_scan,
+        progress=progress,
     )
 
     # Print to console

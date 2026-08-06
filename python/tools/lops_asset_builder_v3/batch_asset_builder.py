@@ -23,6 +23,7 @@ from __future__ import annotations
 import os
 import json
 import re
+import time
 from typing import List, Dict, Optional, Tuple
 from dataclasses import dataclass, field
 
@@ -34,6 +35,13 @@ from ui.houdini_theme import HoudiniTheme
 from tools.lops_asset_builder_v3 import lops_asset_builder_cli
 from tools.lops_asset_builder_v3.asset_builder_ui import SimpleProgressDialog
 from tools.lops_asset_builder_v3.texture_variant_detector import TextureVariantDetector
+from modules.houdini_node_utils import suppress_gc_during_cook
+from integrations.usd_discovery import (
+    DEFAULT_USD_PRIMARY_PRIORITY,
+    USD_ROLE_EXCLUDE_DEFAULT,
+    USD_ROLE_FILES,
+    select_primary_usd_file,
+)
 
 # Keep strong references to progress dialogs so they don't get garbage-collected
 # when the local function scope ends (we close the main dialog during build).
@@ -98,16 +106,9 @@ class AssetScanner:
     ]
 
     # KB3D-style USD role files (geo/payload/mtl layers in Models/ folders)
-    USD_ROLE_EXCLUDE_DEFAULT = ('mtl.usd', 'mtl.usdc', 'mtl.usda')
-    USD_ROLE_FILES = frozenset({
-        'geo.usd', 'geo.usdc', 'geo.usda',
-        'payload.usd', 'payload.usdc', 'payload.usda',
-    })
-    DEFAULT_USD_PRIMARY_PRIORITY = (
-        '{folder_name}.usd',
-        'geo.usd', 'geo.usdc', 'geo.usda',
-        'payload.usd', 'payload.usdc', 'payload.usda',
-    )
+    USD_ROLE_EXCLUDE_DEFAULT = tuple(USD_ROLE_EXCLUDE_DEFAULT)
+    USD_ROLE_FILES = set(USD_ROLE_FILES)
+    DEFAULT_USD_PRIMARY_PRIORITY = DEFAULT_USD_PRIMARY_PRIORITY
 
     def _load_geo_variant_config(self):
         """Load configurable geo variant suffixes and regex patterns.
@@ -321,21 +322,31 @@ class AssetScanner:
         folder_name = os.path.basename(folder_path.rstrip('/\\'))
         eligible = [f for f in geo_files if not self._is_usd_excluded(f)]
 
-        primary: Optional[str] = None
-        for pattern in self.usd_primary_priority:
-            pat_lower = pattern.lower()
-            if '{folder_name}' in pat_lower:
-                for candidate in eligible:
-                    if self._is_folder_wrapper_usd(candidate, folder_name):
-                        primary = candidate
-                        break
-            else:
-                for candidate in eligible:
-                    if self._usd_basename_lower(candidate) == pat_lower:
-                        primary = candidate
-                        break
-            if primary:
-                break
+        usd_only = [f for f in eligible if self._is_usd_file(f)]
+        primary = None
+        if usd_only and (self._is_kb3d_usd_layout(geo_files) or len(usd_only) == len(eligible)):
+            primary = select_primary_usd_file(
+                folder_path,
+                usd_only,
+                usd_primary_priority=self.usd_primary_priority,
+                usd_exclude=self.usd_exclude,
+            )
+
+        if primary is None:
+            for pattern in self.usd_primary_priority:
+                pat_lower = pattern.lower()
+                if '{folder_name}' in pat_lower:
+                    for candidate in eligible:
+                        if self._is_folder_wrapper_usd(candidate, folder_name):
+                            primary = candidate
+                            break
+                else:
+                    for candidate in eligible:
+                        if self._usd_basename_lower(candidate) == pat_lower:
+                            primary = candidate
+                            break
+                if primary:
+                    break
 
         variants: List[str] = []
         for filename in geo_files:
@@ -634,6 +645,172 @@ class AssetScanner:
         return main_path, variants
 
 
+class BatchDialogProgressReporter:
+    """Updates the batch dialog log/progress without pumping Qt events during LOP cooks."""
+
+    def __init__(
+        self,
+        dialog: "ConfigGeneratorDialog",
+        asset_index: int,
+        asset_label: str,
+        total_assets: int,
+        tasks_per_asset: int = 100,
+    ):
+        self.dialog = dialog
+        self.asset_index = max(1, int(asset_index))
+        self.asset_label = asset_label or f"Asset {self.asset_index}"
+        self.total_assets = max(1, int(total_assets))
+        self.tasks_per_asset = max(1, int(tasks_per_asset))
+        self._task_base = (self.asset_index - 1) * self.tasks_per_asset
+        self._local_done = 0
+
+    def _append_log(self, text: str, repaint_only: bool = False) -> None:
+        if not text:
+            return
+        try:
+            self.dialog.append_build_log(text, repaint_only=repaint_only)
+        except Exception:
+            pass
+        print(text)
+
+    def _set_progress(self, done_in_asset: int, message: str | None = None, repaint_only: bool = False) -> None:
+        value = self._task_base + min(done_in_asset, self.tasks_per_asset)
+        try:
+            self.dialog.set_build_progress(value, message, repaint_only=repaint_only)
+        except Exception:
+            pass
+
+    def set_total(self, total: int) -> None:
+        return
+
+    def ensure_total(self, minimum: int) -> None:
+        return
+
+    def step(self, message: str | None = None) -> None:
+        if self.is_cancelled():
+            raise KeyboardInterrupt("Cancelled by user")
+        if not message:
+            return
+        mat_match = re.search(r"Created material\s+(\d+)\s*/\s*(\d+)\s*:\s*(.+)", message)
+        if mat_match:
+            current = int(mat_match.group(1))
+            total = int(mat_match.group(2))
+            mat_name = mat_match.group(3)
+            self._local_done = current
+            msg = (
+                f"[{self.asset_index}/{self.total_assets}] {self.asset_label} — "
+                f"material {current}/{total}: {mat_name}"
+            )
+            self._append_log(msg, repaint_only=True)
+            self._set_progress(current, msg, repaint_only=True)
+        else:
+            msg = f"[{self.asset_index}/{self.total_assets}] {message}"
+            self._append_log(msg)
+            self._set_progress(self._local_done, msg)
+
+    def log(self, message: str) -> None:
+        if message:
+            self._append_log(f"[{self.asset_index}] {message}")
+
+    def is_cancelled(self) -> bool:
+        try:
+            return bool(getattr(self.dialog, "_build_cancel_requested", False))
+        except Exception:
+            return False
+
+    class _SuspendEvents:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb) -> None:
+            return None
+
+    def suspend_events(self) -> _SuspendEvents:
+        return BatchDialogProgressReporter._SuspendEvents()
+
+    def mark_finished(self, message: str | None = None) -> None:
+        self._set_progress(self.tasks_per_asset, message)
+        if message:
+            self.log(message)
+
+
+class BatchHeadlessProgressReporter:
+    """Status-bar-only progress during LOP cooks — avoids Qt repaints/GC crashes on H22."""
+
+    def __init__(
+        self,
+        asset_index: int,
+        asset_label: str,
+        total_assets: int,
+        cancel_check,
+    ):
+        self.asset_index = max(1, int(asset_index))
+        self.asset_label = asset_label or f"Asset {self.asset_index}"
+        self.total_assets = max(1, int(total_assets))
+        self._cancel_check = cancel_check
+        self.messages: List[str] = []
+        self._local_done = 0
+        self._material_total = 0
+
+    def _status(self, message: str) -> None:
+        if not message:
+            return
+        prefix = f"[{self.asset_index}/{self.total_assets}] {self.asset_label}: "
+        self.messages.append(prefix + message)
+        try:
+            hou.ui.setStatusMessage((prefix + message)[:240])
+        except Exception:
+            pass
+        print(prefix + message)
+
+    def set_total(self, total: int) -> None:
+        return
+
+    def ensure_total(self, minimum: int) -> None:
+        return
+
+    def step(self, message: str = None) -> None:
+        if self.is_cancelled():
+            raise KeyboardInterrupt("Cancelled by user")
+        if not message:
+            return
+        mat_match = re.search(r"Created material\s+(\d+)\s*/\s*(\d+)\s*:\s*(.+)", message)
+        if mat_match:
+            current, total, mat_name = mat_match.group(1), mat_match.group(2), mat_match.group(3)
+            self._material_total = max(self._material_total, int(total))
+            self._local_done = int(current)
+            self._status(
+                f"material {current}/{total}: {mat_name}"
+            )
+        else:
+            self._status(message)
+
+    def log(self, message: str) -> None:
+        if message:
+            self.messages.append(message)
+            print(f"[{self.asset_index}] {message}")
+
+    def is_cancelled(self) -> bool:
+        try:
+            return bool(self._cancel_check())
+        except Exception:
+            return False
+
+    class _SuspendEvents:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb) -> None:
+            return None
+
+    def suspend_events(self) -> _SuspendEvents:
+        return BatchHeadlessProgressReporter._SuspendEvents()
+
+    def mark_finished(self, message: str | None = None) -> None:
+        if message:
+            self.log(message)
+
+
 class BatchUIProgressReporter:
     """Simplified progress reporter based on a fixed number of tasks (materials).
 
@@ -645,12 +822,16 @@ class BatchUIProgressReporter:
       asset to ensure the segment completes (useful when folders had zero
       discoverable textures and templates were created instead).
     """
+    _UI_PUMP_INTERVAL_S = 0.35
+
     def __init__(self, dialog: SimpleProgressDialog, asset_index: int, asset_label: str, expected_tasks_for_asset: int):
         self.dialog = dialog
         self.asset_index = max(1, int(asset_index))
         self.asset_label = asset_label or f"Asset {self.asset_index}"
         self.expected = max(1, int(expected_tasks_for_asset))
         self._local_done = 0
+        self._suspend_events = False
+        self._last_ui_pump = 0.0
         # Store total_assets for progress formatting
         self.total_assets = getattr(dialog, '_total_assets', 0)
         # Initialize shared counters on dialog
@@ -661,6 +842,37 @@ class BatchUIProgressReporter:
         try:
             self.dialog.log(f"\n=== [{self.asset_index}] Building {self.asset_label} ===")
             self.dialog.set_message(f"Starting {self.asset_label}…")
+        except Exception:
+            pass
+
+    class _SuspendEvents:
+        def __init__(self, reporter: "BatchUIProgressReporter") -> None:
+            self._reporter = reporter
+            self._previous = False
+
+        def __enter__(self) -> "BatchUIProgressReporter._SuspendEvents":
+            self._previous = self._reporter._suspend_events
+            self._reporter._suspend_events = True
+            return self
+
+        def __exit__(self, exc_type, exc, tb) -> None:
+            self._reporter._suspend_events = self._previous
+
+    def suspend_events(self) -> _SuspendEvents:
+        """Disable Qt event pumping while Houdini cooks LOP/VOP nodes (prevents H22 crashes)."""
+        return BatchUIProgressReporter._SuspendEvents(self)
+
+    def _pump_ui(self, force: bool = False) -> None:
+        if self._suspend_events:
+            return
+        now = time.monotonic()
+        if not force and (now - self._last_ui_pump) < self._UI_PUMP_INTERVAL_S:
+            return
+        self._last_ui_pump = now
+        try:
+            QtWidgets.QApplication.processEvents(
+                QtCore.QEventLoop.ProcessEventsFlag.ExcludeUserInputEvents, 25
+            )
         except Exception:
             pass
 
@@ -681,6 +893,7 @@ class BatchUIProgressReporter:
         return
 
     def step(self, message: str = None):
+        self._pump_ui()
         if self.is_cancelled():
             raise KeyboardInterrupt("Cancelled by user")
         if message:
@@ -728,10 +941,7 @@ class BatchUIProgressReporter:
             pass
 
     def is_cancelled(self) -> bool:
-        try:
-            QtWidgets.QApplication.processEvents(QtCore.QEventLoop.AllEvents, 50)
-        except Exception:
-            pass
+        self._pump_ui()
         try:
             return bool(getattr(self.dialog, 'cancelled', False) or getattr(self.dialog, 'force_kill', False))
         except Exception:
@@ -747,6 +957,7 @@ class BatchUIProgressReporter:
                 self.dialog.log(f"[{self.asset_index}] {message}")
             except Exception:
                 pass
+        self._pump_ui(force=True)
 
 
 class CollapsibleSection(QtWidgets.QWidget):
@@ -1170,6 +1381,106 @@ class ConfigGeneratorDialog(QtWidgets.QDialog):
         self.status_label.setStyleSheet("padding: 5px; background-color: #333; color: #eee;")
         outer_layout.addWidget(self.status_label)
 
+        # Build progress panel (visible during batch build)
+        self.build_panel = QtWidgets.QGroupBox("Build Progress")
+        build_panel_layout = QtWidgets.QVBoxLayout(self.build_panel)
+        self.build_message_label = QtWidgets.QLabel("Idle")
+        self.build_message_label.setWordWrap(True)
+        self.build_progress_bar = QtWidgets.QProgressBar()
+        self.build_progress_bar.setRange(0, 100)
+        self.build_progress_bar.setValue(0)
+        self.build_log = QtWidgets.QTextEdit()
+        self.build_log.setReadOnly(True)
+        self.build_log.setMinimumHeight(140)
+        self.build_log.setLineWrapMode(QtWidgets.QTextEdit.LineWrapMode.WidgetWidth)
+        try:
+            self.build_log.setStyleSheet(
+                "background-color: #111; color: #eee; "
+                "font-family: Consolas, 'Courier New', monospace; font-size: 11px;"
+            )
+        except Exception:
+            pass
+        self.btn_cancel_build = QtWidgets.QPushButton("Cancel After Current Asset")
+        self.btn_cancel_build.setEnabled(False)
+        self.btn_cancel_build.clicked.connect(self._request_build_cancel)
+        build_panel_layout.addWidget(self.build_message_label)
+        build_panel_layout.addWidget(self.build_progress_bar)
+        build_panel_layout.addWidget(self.build_log, 1)
+        build_panel_layout.addWidget(self.btn_cancel_build)
+        self.build_panel.setVisible(False)
+        outer_layout.addWidget(self.build_panel)
+
+        self._build_cancel_requested = False
+        self._build_running = False
+
+    def _request_build_cancel(self) -> None:
+        self._build_cancel_requested = True
+        self.append_build_log("Cancel requested — will stop after the current asset finishes.")
+
+    def begin_build_progress(self, total_assets: int, tasks_per_asset: int = 100) -> None:
+        self._build_cancel_requested = False
+        self._build_running = True
+        total_tasks = max(1, total_assets * tasks_per_asset)
+        self.build_panel.setVisible(True)
+        self.build_progress_bar.setRange(0, total_tasks)
+        self.build_progress_bar.setValue(0)
+        self.build_message_label.setText(f"Starting batch build ({total_assets} asset(s))…")
+        self.build_log.clear()
+        self.btn_cancel_build.setEnabled(True)
+        self.btn_build_now.setEnabled(False)
+        self.append_build_log(f"Starting batch build of {total_assets} asset(s).")
+        self._flush_build_ui()
+
+    def append_build_log(self, text: str, repaint_only: bool = False) -> None:
+        if not text:
+            return
+        self.build_log.append(text)
+        try:
+            cursor = self.build_log.textCursor()
+            cursor.movePosition(QtGui.QTextCursor.MoveOperation.End)
+            self.build_log.setTextCursor(cursor)
+        except Exception:
+            pass
+        if repaint_only:
+            try:
+                self.build_log.repaint()
+                self.build_progress_bar.repaint()
+                self.build_message_label.repaint()
+            except Exception:
+                pass
+
+    def set_build_progress(self, value: int, message: str | None = None, repaint_only: bool = False) -> None:
+        self.build_progress_bar.setValue(max(0, int(value)))
+        if message:
+            self.build_message_label.setText(message)
+            self.status_label.setText(message[:160])
+        if repaint_only:
+            try:
+                self.build_progress_bar.repaint()
+                self.build_message_label.repaint()
+                self.status_label.repaint()
+            except Exception:
+                pass
+
+    def _flush_build_ui(self) -> None:
+        """Repaint the build panel between assets — never call during LOP cooks."""
+        try:
+            self.build_panel.repaint()
+            QtWidgets.QApplication.processEvents(
+                QtCore.QEventLoop.ProcessEventsFlag.ExcludeUserInputEvents, 30
+            )
+        except Exception:
+            pass
+
+    def end_build_progress(self, summary: str) -> None:
+        self._build_running = False
+        self.btn_cancel_build.setEnabled(False)
+        self.btn_build_now.setEnabled(True)
+        self.build_message_label.setText(summary)
+        self.status_label.setText(summary)
+        self.append_build_log(summary)
+        self._flush_build_ui()
+
     def _update_env_ui(self):
         """Refresh env lights count label and paths display."""
         try:
@@ -1534,8 +1845,32 @@ class ConfigGeneratorDialog(QtWidgets.QDialog):
         # No variant detected
         return (name, "")
 
-    def _get_config_for_asset(self, asset: DetectedAsset) -> Dict:
+    def _capture_build_settings(self) -> Dict:
+        """Snapshot UI options before hiding/closing the dialog."""
+        try:
+            lowercase_material_names = self.cb_lowercase_material_names.isChecked()
+        except Exception:
+            lowercase_material_names = True
+        try:
+            use_custom_component_output = self.cb_use_custom_component_output.isChecked()
+        except Exception:
+            use_custom_component_output = True
+        return {
+            "create_geo_variants": self.cb_create_geo_variants.isChecked(),
+            "create_material_variants": self.cb_create_material_variants.isChecked(),
+            "create_lookdev": self.cb_create_lookdev.isChecked(),
+            "create_light_rig": self.cb_create_light_rig.isChecked(),
+            "enable_env_lights": self.cb_enable_env_lights.isChecked(),
+            "create_network_boxes": self.cb_create_network_boxes.isChecked(),
+            "skip_matchsize": self.cb_skip_matchsize.isChecked(),
+            "lowercase_material_names": lowercase_material_names,
+            "use_custom_component_output": use_custom_component_output,
+            "env_light_paths": list(getattr(self, "env_light_paths", []) or []),
+        }
+
+    def _get_config_for_asset(self, asset: DetectedAsset, settings: Dict | None = None) -> Dict:
         """Generate config dictionary for an asset."""
+        settings = settings or self._capture_build_settings()
         # Get variant list based on mode
         main_asset_path, variant_paths = self._get_variant_list_by_mode(asset)
 
@@ -1543,37 +1878,29 @@ class ConfigGeneratorDialog(QtWidgets.QDialog):
             "main_asset_file_path": main_asset_path,
             "folder_textures": asset.texture_path or f"{asset.base_path}/textures",
             "asset_name": asset.name,
+            # Batch UI already scanned paths; skip slow per-asset full-library validation.
+            "validate_materials": False,
+            "skip_geometry_scan": True,
         }
 
         # Add geometry variants only if checkbox is enabled
-        if variant_paths and self.cb_create_geo_variants.isChecked():
+        if variant_paths and settings.get("create_geo_variants"):
             config["asset_variants"] = variant_paths
 
         # Add material variants only if checkbox is enabled
-        if asset.material_variants and self.cb_create_material_variants.isChecked():
+        if asset.material_variants and settings.get("create_material_variants"):
             config["mtl_variants"] = asset.material_variants
 
         # Add options
-        config["create_lookdev"] = self.cb_create_lookdev.isChecked()
-        config["create_light_rig"] = self.cb_create_light_rig.isChecked()
-        config["enable_env_lights"] = self.cb_enable_env_lights.isChecked()
-        config["create_network_boxes"] = self.cb_create_network_boxes.isChecked()
-        config["skip_matchsize"] = self.cb_skip_matchsize.isChecked()
-        # Lowercase material names toggle for VEX wrangle
-        try:
-            config["lowercase_material_names"] = self.cb_lowercase_material_names.isChecked()
-        except Exception:
-            # Default to True if checkbox missing for any reason
-            config["lowercase_material_names"] = True
-        # Add env light files if provided
-        if getattr(self, 'env_light_paths', None):
-            config["env_light_paths"] = list(self.env_light_paths)
-
-        # Component output mode
-        try:
-            config["use_custom_component_output"] = self.cb_use_custom_component_output.isChecked()
-        except Exception:
-            config["use_custom_component_output"] = True
+        config["create_lookdev"] = bool(settings.get("create_lookdev"))
+        config["create_light_rig"] = bool(settings.get("create_light_rig"))
+        config["enable_env_lights"] = bool(settings.get("enable_env_lights"))
+        config["create_network_boxes"] = bool(settings.get("create_network_boxes"))
+        config["skip_matchsize"] = bool(settings.get("skip_matchsize"))
+        config["lowercase_material_names"] = bool(settings.get("lowercase_material_names", True))
+        if settings.get("env_light_paths"):
+            config["env_light_paths"] = list(settings["env_light_paths"])
+        config["use_custom_component_output"] = bool(settings.get("use_custom_component_output", True))
 
         return config
 
@@ -1697,145 +2024,104 @@ class ConfigGeneratorDialog(QtWidgets.QDialog):
         # Confirm build
         reply = QtWidgets.QMessageBox.question(
             self, "Confirm Build",
-            f"Build {len(selected)} asset(s) now?\n\nThis will create LOPS networks in the current scene.",
+            f"Build {len(selected)} asset(s) now?\n\n"
+            "Progress and logs appear in the Build Progress panel below.",
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
         )
 
         if reply != QtWidgets.QMessageBox.Yes:
             return
 
-        # Build assets with progress UI
-        results = []
-        total_assets = len(selected)
+        build_settings = self._capture_build_settings()
         assets_in_order: List[DetectedAsset] = []
+        asset_configs: List[Dict] = []
         for item in selected:
             asset: DetectedAsset = item.data(QtCore.Qt.UserRole)
             assets_in_order.append(asset)
+            asset_configs.append(self._get_config_for_asset(asset, build_settings))
 
-        # Create the progress dialog FIRST so it shows immediately
-        # We'll use a simple task count estimation (100 per asset) to avoid pre-scanning files
-        progress_dialog = SimpleProgressDialog(title="LOPs Asset Builder v3 — Building Assets", parent=None)
-
-        # Simple estimate: 100 tasks per asset (avoids slow file scanning before showing dialog)
-        total_tasks = total_assets * 100
-
-        try:
-            # Ensure the dialog is visible and brought to front so the progress bar is shown
-            progress_dialog.show()
-            # Keep a strong reference so it doesn't close after completion due to GC
-            try:
-                _register_progress_dialog(progress_dialog)
-            except Exception:
-                pass
-            try:
-                progress_dialog.present()
-            except Exception:
-                progress_dialog.raise_()
-                progress_dialog.activateWindow()
-            # Initialize progress range using total tasks and start at 0
-            try:
-                progress_dialog._tasks_total = int(total_tasks)
-                progress_dialog._tasks_done = 0
-                # Store total number of assets for progress formatting in reporter
-                progress_dialog._total_assets = int(total_assets)
-            except Exception:
-                pass
-            progress_dialog.set_total(int(total_tasks))
-            progress_dialog.set_value(0)
-            progress_dialog.set_message(f"Starting batch build of {total_assets} asset(s)…")
-            progress_dialog.log(f"Starting batch build of {total_assets} asset(s). Progress is based on {total_tasks} material creation task(s).")
-            # Close the main dialog so only the progress window remains visible
-            try:
-                self.close()
-            except Exception:
-                try:
-                    self.hide()
-                except Exception:
-                    pass
-        except Exception:
-            pass
-
+        total_assets = len(assets_in_order)
+        tasks_per_asset = 100
+        results: List[tuple] = []
         cancelled = False
-        for idx, asset in enumerate(assets_in_order, start=1):
-            config = self._get_config_for_asset(asset)
 
-            # Log current building status to the progress dialog instead of updating the closed main dialog
-            try:
-                progress_dialog.log(f"Building {asset.name} ({idx}/{total_assets})…")
-            except Exception:
-                pass
-            QtWidgets.QApplication.processEvents()
+        self.begin_build_progress(total_assets, tasks_per_asset=tasks_per_asset)
+        self.raise_()
+        self.activateWindow()
 
-            reporter = BatchUIProgressReporter(
-                progress_dialog,
+        for idx, (asset, config) in enumerate(zip(assets_in_order, asset_configs), start=1):
+            if self._build_cancel_requested:
+                cancelled = True
+                break
+
+            header = f"[{idx}/{total_assets}] Building {asset.name}…"
+            self.append_build_log(f"\n=== {header} ===")
+            self.set_build_progress((idx - 1) * tasks_per_asset, header)
+            self._flush_build_ui()
+
+            reporter = BatchDialogProgressReporter(
+                dialog=self,
                 asset_index=idx,
                 asset_label=asset.name,
-                expected_tasks_for_asset=100  # Simple fixed estimate per asset
+                total_assets=total_assets,
+                tasks_per_asset=tasks_per_asset,
             )
 
             try:
-                result = lops_asset_builder_cli.build_asset(config, progress=reporter)
+                with suppress_gc_during_cook():
+                    result = lops_asset_builder_cli.build_asset(config, progress=reporter)
             except KeyboardInterrupt:
-                # User cancelled via dialog
                 cancelled = True
-                # Mark finished for the current reporter
-                try:
-                    reporter.mark_finished("Cancelled by user")
-                except Exception:
-                    pass
+                self.append_build_log(f"Cancelled during {asset.name}")
                 break
             except Exception as e:
-                # Unexpected error, wrap into a failed BuildResult-like object
                 class _Tmp:
-                    def __init__(self, e):
+                    def __init__(self, exc):
                         self.success = False
-                        self.message = str(e)
-                        self.error = e
+                        self.message = str(exc)
+                        self.error = exc
                         self.duration = 0.0
+
                 result = _Tmp(e)
 
             results.append((asset.name, result))
-            # Ensure we mark the per-asset finished to push progress to boundary
-            try:
-                # Advance progress to the next asset without emitting a duplicate finish line
-                reporter.mark_finished()
-            except Exception:
-                pass
+            status = "OK" if getattr(result, "success", False) else "FAILED"
+            line = f"[{idx}/{total_assets}] {asset.name}: {status}"
+            if not getattr(result, "success", False):
+                line += f" — {getattr(result, 'message', '')}"
+            self.append_build_log(line)
+            self.set_build_progress(idx * tasks_per_asset, line)
+            self._flush_build_ui()
 
-            # Check cancellation flag set on dialog between assets
-            try:
-                if getattr(progress_dialog, 'cancelled', False):
-                    cancelled = True
-                    break
-            except Exception:
-                pass
+        success_count = sum(1 for _, r in results if getattr(r, "success", False))
+        failed_count = len(results) - success_count
+        summary_header = "Build cancelled" if cancelled else "Batch build completed"
+        summary = f"{summary_header}: {success_count} succeeded, {failed_count} failed"
+        self.append_build_log("\n=== SUMMARY ===")
+        self.append_build_log(f"Success: {success_count}")
+        self.append_build_log(f"Failed: {failed_count}")
+        if failed_count > 0:
+            self.append_build_log("Failed assets:")
+            for name, result in results:
+                if not getattr(result, "success", False):
+                    self.append_build_log(f"  • {name}: {getattr(result, 'message', '')}")
 
-        # Finalize progress dialog and log summary directly in it (no extra dialogs)
+        self.end_build_progress(summary)
         try:
-            success_count = sum(1 for _, r in results if getattr(r, 'success', False))
-            failed_count = len(results) - success_count
-            summary_header = "Build cancelled by user" if cancelled else "Batch build completed"
-            progress_dialog.set_message(summary_header)
-            progress_dialog.log("\n=== SUMMARY ===")
-            progress_dialog.log(f"Success: {success_count}")
-            progress_dialog.log(f"Failed:  {failed_count}")
-            if failed_count > 0:
-                progress_dialog.log("Failed assets:")
-                for name, result in results:
-                    if not getattr(result, 'success', False):
-                        progress_dialog.log(f"  • {name}: {getattr(result, 'message', '')}")
-            # Clamp progress to 100% at the end using the precomputed tasks total
-            try:
-                total_final = int(getattr(progress_dialog, "_tasks_total", 0) or progress_dialog.progress_bar.maximum())
-                progress_dialog.set_total(total_final)
-                progress_dialog.set_value(total_final)
-            except Exception:
-                pass
-            progress_dialog.mark_finished()
+            hou.ui.setStatusMessage(summary[:240])
         except Exception:
             pass
 
-        # Do not show any QMessageBox or reopen the main dialog — only the progress dialog should remain visible
+        if failed_count > 0:
+            try:
+                hou.ui.displayMessage(
+                    summary,
+                    severity=hou.severityType.Warning,
+                    title="LOPS Batch Asset Builder",
+                )
+            except Exception:
+                pass
+
         return
 
 

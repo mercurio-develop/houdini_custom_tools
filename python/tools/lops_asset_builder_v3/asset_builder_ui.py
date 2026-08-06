@@ -37,39 +37,233 @@ def _basename_variant(name: str) -> str:
     return base
 
 
-class _ListEditor(QtWidgets.QWidget):
-    """Reusable list editor with Add/Remove buttons."""
+class _PathLineEdit(QtWidgets.QLineEdit):
+    """Path field that keeps the filename / trailing folder visible when blurred."""
 
-    def __init__(self, parent: QtWidgets.QWidget | None, mode: str = "file", file_filter: str | None = None) -> None:
+    def setText(self, text: str) -> None:
+        super().setText(text)
+        self._sync_path_display()
+
+    def _sync_path_display(self) -> None:
+        text = self.text()
+        if text:
+            self.setToolTip(text)
+            if not self.hasFocus():
+                self.setCursorPosition(len(text))
+        else:
+            self.setToolTip("")
+
+    def resizeEvent(self, event: QtGui.QResizeEvent) -> None:
+        super().resizeEvent(event)
+        if not self.hasFocus():
+            self._sync_path_display()
+
+    def focusOutEvent(self, event: QtGui.QFocusEvent) -> None:
+        super().focusOutEvent(event)
+        self._sync_path_display()
+
+
+def _make_path_list_item(path: str) -> QtWidgets.QListWidgetItem:
+    """List row for a full path; tooltip holds the complete string."""
+    item = QtWidgets.QListWidgetItem(path)
+    item.setToolTip(path)
+    return item
+
+
+def _section_subtitle(text: str, parent: QtWidgets.QWidget | None = None) -> QtWidgets.QLabel:
+    label = QtWidgets.QLabel(text, parent)
+    try:
+        c = HoudiniTheme.colors()
+        label.setStyleSheet(
+            f"color: {c['text_secondary']}; font-size: {HoudiniTheme.FONTS['default_size']}px; "
+            "padding: 0; margin: 0 0 2px 0;"
+        )
+        label.setWordWrap(True)
+    except Exception:
+        pass
+    return label
+
+
+def _compact_primary_button_style() -> str:
+    try:
+        c = HoudiniTheme.colors()
+        # Dark dialog background on accent fill — matches Houdini highlight button contrast.
+        text_color = c["background"]
+        return (
+            f"QPushButton {{ background-color: {c['accent_primary']}; color: {text_color}; "
+            f"border: 1px solid {c['accent_primary']}; font-weight: 600; font-size: 11px; "
+            f"padding: 3px 8px; min-height: 20px; }}"
+            f"QPushButton:hover {{ background-color: {c['accent_secondary']}; "
+            f"border-color: {c['accent_secondary']}; color: {text_color}; }}"
+            f"QPushButton:disabled {{ background-color: {c['disabled']}; "
+            f"color: {c['disabled_text']}; border-color: {c['disabled']}; }}"
+        )
+    except Exception:
+        return ""
+
+
+def _compact_secondary_button_style() -> str:
+    try:
+        c = HoudiniTheme.colors()
+        return (
+            f"QPushButton {{ background-color: {c['surface']}; color: {c['text']}; "
+            f"border: 1px solid {c['border']}; font-weight: normal; font-size: 11px; "
+            f"padding: 3px 8px; min-height: 20px; }}"
+            f"QPushButton:hover {{ background-color: {c['hover']}; border-color: {c['accent_primary']}; "
+            f"color: {c['text']}; }}"
+            f"QPushButton:disabled {{ color: {c['disabled_text']}; border-color: {c['disabled']}; }}"
+        )
+    except Exception:
+        return ""
+
+
+class _PathPickerRow(QtWidgets.QWidget):
+    """Single-line path field with a browse button."""
+
+    def __init__(
+        self,
+        parent: QtWidgets.QWidget | None = None,
+        *,
+        placeholder: str = "",
+        browse_label: str = "Browse…",
+        browse_tooltip: str = "",
+    ) -> None:
+        super().__init__(parent)
+        self.line_edit = _PathLineEdit()
+        if placeholder:
+            self.line_edit.setPlaceholderText(placeholder)
+        self.btn_browse = QtWidgets.QPushButton(browse_label)
+        self.btn_browse.setMinimumWidth(68)
+        self.btn_browse.setMaximumWidth(84)
+        if browse_tooltip:
+            self.btn_browse.setToolTip(browse_tooltip)
+        style = _compact_secondary_button_style()
+        if style:
+            self.btn_browse.setStyleSheet(style)
+
+        row = QtWidgets.QHBoxLayout(self)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(8)
+        row.addWidget(self.line_edit, 1)
+        row.addWidget(self.btn_browse, 0)
+
+    def text(self) -> str:
+        return self.line_edit.text()
+
+    def setText(self, value: str) -> None:
+        self.line_edit.setText(value)
+        self.line_edit._sync_path_display()
+
+    def textChanged(self):
+        return self.line_edit.textChanged
+
+
+class _ListEditor(QtWidgets.QWidget):
+    """Reusable list editor with Add/Remove buttons inside a panel frame."""
+
+    def __init__(
+        self,
+        parent: QtWidgets.QWidget | None,
+        mode: str = "file",
+        file_filter: str | None = None,
+        *,
+        add_label: str = "Add…",
+        remove_label: str = "Remove",
+        list_min_height: int = 96,
+    ) -> None:
         super().__init__(parent)
         self.mode = mode  # "file" or "dir"
         self.file_filter = file_filter
+        self._add_label = add_label
+        self._remove_label = remove_label
+        self._list_min_height = list_min_height
         self._setup_ui()
 
     def _setup_ui(self) -> None:
-        layout = QtWidgets.QVBoxLayout(self)
-        self.listw = QtWidgets.QListWidget(self)
+        outer = QtWidgets.QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(8)
+
+        panel = QtWidgets.QFrame()
+        panel.setObjectName("listEditorPanel")
+        try:
+            c = HoudiniTheme.colors()
+            panel.setStyleSheet(
+                f"#listEditorPanel {{"
+                f"  background-color: {c['surface']};"
+                f"  border: 1px solid {c['border']};"
+                f"  border-radius: {HoudiniTheme.LAYOUT['border_radius']}px;"
+                f"  padding: 4px;"
+                f"}}"
+                f"#listEditorPanel QListWidget {{"
+                f"  background-color: {c['input_background']};"
+                f"  border: 1px solid {c['border']};"
+                f"  border-radius: {HoudiniTheme.LAYOUT['border_radius']}px;"
+                f"  min-height: 0;"
+                f"}}"
+            )
+        except Exception:
+            pass
+
+        panel_layout = QtWidgets.QVBoxLayout(panel)
+        panel_layout.setContentsMargins(8, 8, 8, 8)
+        panel_layout.setSpacing(6)
+
+        self.listw = QtWidgets.QListWidget(panel)
         self.listw.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
-        # Improve visibility of long paths and overall height
-        self.listw.setMinimumHeight(100)
-        self.listw.setSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Expanding)
-        self.listw.setTextElideMode(QtCore.Qt.TextElideMode.ElideMiddle)
+        # Elide the prefix so the added file/folder name stays visible on the right.
+        self.listw.setTextElideMode(QtCore.Qt.TextElideMode.ElideLeft)
         self.listw.setUniformItemSizes(True)
         self.listw.setWordWrap(False)
-        self.listw.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
-        self.listw.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
-        layout.addWidget(self.listw)
+        self.listw.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.listw.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.listw.setSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Expanding,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
+        panel_layout.addWidget(self.listw)
+        outer.addWidget(panel)
+
+        model = self.listw.model()
+        if model is not None:
+            model.rowsInserted.connect(lambda *_args: self._sync_list_height())
+            model.rowsRemoved.connect(lambda *_args: self._sync_list_height())
+        self._sync_list_height()
 
         btns = QtWidgets.QHBoxLayout()
-        self.btn_add = QtWidgets.QPushButton("Add", self)
-        self.btn_remove = QtWidgets.QPushButton("Remove", self)
+        btns.setContentsMargins(0, 0, 0, 0)
+        btns.setSpacing(8)
+        self.btn_add = QtWidgets.QPushButton(self._add_label)
+        self.btn_remove = QtWidgets.QPushButton(self._remove_label)
+        self.btn_add.setMinimumWidth(92)
+        self.btn_remove.setMinimumWidth(76)
+        self.btn_add.setSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Minimum,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
+        add_style = _compact_primary_button_style()
+        remove_style = _compact_secondary_button_style()
+        if add_style:
+            self.btn_add.setStyleSheet(add_style)
+        if remove_style:
+            self.btn_remove.setStyleSheet(remove_style)
         btns.addWidget(self.btn_add)
         btns.addWidget(self.btn_remove)
         btns.addStretch(1)
-        layout.addLayout(btns)
+        outer.addLayout(btns)
 
         self.btn_add.clicked.connect(self._on_add)
         self.btn_remove.clicked.connect(self._on_remove)
+
+    def _sync_list_height(self) -> None:
+        """Grow list to fit items; outer dialog scroll area handles overflow."""
+        count = self.listw.count()
+        row_h = self.listw.sizeHintForRow(0) if count else 0
+        if row_h <= 0:
+            row_h = 22
+        rows = max(3, count)
+        height = max(self._list_min_height, rows * row_h + 6)
+        self.listw.setFixedHeight(height)
 
     def items(self) -> List[str]:
         return [self.listw.item(i).text() for i in range(self.listw.count())]
@@ -79,9 +273,14 @@ class _ListEditor(QtWidgets.QWidget):
         for v in values:
             if not v:
                 continue
-            item = QtWidgets.QListWidgetItem(v)
-            item.setToolTip(v)
-            self.listw.addItem(item)
+            self.listw.addItem(_make_path_list_item(v))
+        self._sync_list_height()
+
+    def append_item(self, path: str) -> None:
+        if not path:
+            return
+        self.listw.addItem(_make_path_list_item(path))
+        self._sync_list_height()
 
     def _on_add(self) -> None:
         if self.mode == "file":
@@ -95,20 +294,18 @@ class _ListEditor(QtWidgets.QWidget):
             )
             for f in files or []:
                 if f:
-                    item = QtWidgets.QListWidgetItem(f)
-                    item.setToolTip(f)
-                    self.listw.addItem(item)
+                    self.listw.addItem(_make_path_list_item(f))
         else:
             dir_ = QtWidgets.QFileDialog.getExistingDirectory(self, "Select folder")
             if dir_:
-                item = QtWidgets.QListWidgetItem(dir_)
-                item.setToolTip(dir_)
-                self.listw.addItem(item)
+                self.listw.addItem(_make_path_list_item(dir_))
+        self._sync_list_height()
 
     def _on_remove(self) -> None:
         for it in self.listw.selectedItems():
             row = self.listw.row(it)
             self.listw.takeItem(row)
+        self._sync_list_height()
 
 
 class AssetMaterialVariantsDialog(QtWidgets.QDialog):
@@ -121,124 +318,300 @@ class AssetMaterialVariantsDialog(QtWidgets.QDialog):
     def __init__(self, default_asset: str = "", default_maps: str = "", parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         HoudiniTheme.setup_modal_dialog(
-            self, title="LOPS Asset Builder", min_width=560, min_height=480
+            self,
+            title="LOPS Asset Builder",
+            min_width=620,
+            min_height=520,
+            resizable=True,
         )
         self.setModal(True)
         self._build_ui(default_asset, default_maps)
+        self._apply_contrast_layers()
+
+    def _apply_contrast_layers(self) -> None:
+        """Extra layering so sections, panels, and inputs read clearly apart."""
+        try:
+            c = HoudiniTheme.colors()
+            self.setObjectName("assetBuilderDialog")
+            self.setStyleSheet(
+                self.styleSheet()
+                + f"""
+                #assetBuilderDialog {{
+                    background-color: {c["background"]};
+                }}
+                #assetBuilderDialog QScrollArea QWidget {{
+                    background-color: transparent;
+                }}
+                #assetBuilderDialog QGroupBox {{
+                    background-color: {c["surface"]};
+                    border: 1px solid {c["border"]};
+                }}
+                #assetBuilderDialog QGroupBox::title {{
+                    font-size: {HoudiniTheme.FONTS["header_size"]}px;
+                    font-weight: bold;
+                    color: {c["accent_primary"]};
+                }}
+                #assetBuilderDialog QLineEdit {{
+                    background-color: {c["input_background"]};
+                    border: 1px solid {c["border"]};
+                }}
+                #assetBuilderDialog QLineEdit:focus {{
+                    border: 1px solid {c["border_focus"]};
+                }}
+                #assetBuilderDialog QScrollArea {{
+                    background-color: transparent;
+                    border: none;
+                }}
+                #assetBuilderDialog QScrollBar:vertical {{
+                    background: transparent;
+                    width: 10px;
+                    margin: 2px 0 2px 2px;
+                }}
+                #assetBuilderDialog QScrollBar::handle:vertical {{
+                    background: {c["border"]};
+                    border-radius: 5px;
+                    min-height: 28px;
+                }}
+                #assetBuilderDialog QScrollBar::handle:vertical:hover {{
+                    background: {c["accent_primary"]};
+                }}
+                #assetBuilderDialog QScrollBar::add-line:vertical,
+                #assetBuilderDialog QScrollBar::sub-line:vertical,
+                #assetBuilderDialog QScrollBar::add-page:vertical,
+                #assetBuilderDialog QScrollBar::sub-page:vertical {{
+                    height: 0;
+                    background: none;
+                }}
+                """
+            )
+        except Exception:
+            pass
+
+    @staticmethod
+    def _apply_button_styles(btn_box: QtWidgets.QDialogButtonBox) -> None:
+        """Compact, softer buttons for OK/Cancel only in this dialog."""
+        ok_btn = btn_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok)
+        cancel_btn = btn_box.button(QtWidgets.QDialogButtonBox.StandardButton.Cancel)
+        primary = _compact_primary_button_style()
+        secondary = _compact_secondary_button_style()
+        if ok_btn and primary:
+            ok_btn.setStyleSheet(primary)
+        if cancel_btn and secondary:
+            cancel_btn.setStyleSheet(secondary)
+
+    @staticmethod
+    def _make_section(title: str, subtitle: str | None = None) -> tuple[QtWidgets.QGroupBox, QtWidgets.QVBoxLayout]:
+        group = QtWidgets.QGroupBox(title)
+        inner = QtWidgets.QVBoxLayout(group)
+        inner.setContentsMargins(12, 14, 12, 12)
+        inner.setSpacing(10)
+        if subtitle:
+            inner.addWidget(_section_subtitle(subtitle))
+        return group, inner
+
+    @staticmethod
+    def _form_field(label: str, widget: QtWidgets.QWidget, *, tooltip: str = "") -> tuple[QtWidgets.QLabel, QtWidgets.QWidget]:
+        lbl = QtWidgets.QLabel(label)
+        lbl.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignTop)
+        lbl.setMinimumWidth(HoudiniTheme.LAYOUT["form_label_min_width"])
+        if tooltip:
+            lbl.setToolTip(tooltip)
+            widget.setToolTip(tooltip)
+        return lbl, widget
 
     def _build_ui(self, default_asset: str, default_maps: str) -> None:
-        lay = QtWidgets.QVBoxLayout(self)
-        form = QtWidgets.QFormLayout()
-        HoudiniTheme.apply_form_layout(form)
+        root = QtWidgets.QVBoxLayout(self)
+        root.setContentsMargins(12, 12, 12, 12)
+        root.setSpacing(10)
 
-        # Main Asset File Path
-        self.ed_main_asset = QtWidgets.QLineEdit(default_asset or "")
-        btn_asset = QtWidgets.QPushButton("…")
-        btn_asset.setFixedWidth(28)
-        row_asset = QtWidgets.QHBoxLayout()
-        row_asset.addWidget(self.ed_main_asset)
-        row_asset.addWidget(btn_asset)
-        form.addRow("Main Asset File Path", row_asset)
-        btn_asset.clicked.connect(self._pick_asset)
+        scroll = QtWidgets.QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
-        # Asset Name (auto)
+        content = QtWidgets.QWidget()
+        content_layout = QtWidgets.QVBoxLayout(content)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(14)
+
+        # ── Geometry ──────────────────────────────────────────────────────
+        geo_group, geo_layout = self._make_section(
+            "Geometry",
+            "Main asset file, optional geo variants, and naming options.",
+        )
+        geo_form = QtWidgets.QFormLayout()
+        HoudiniTheme.apply_form_layout(geo_form)
+        geo_form.setVerticalSpacing(10)
+        geo_form.setHorizontalSpacing(12)
+
+        self.ed_main_asset = _PathPickerRow(
+            placeholder="Select main geometry file…",
+            browse_label="Browse…",
+            browse_tooltip="Pick the primary geometry file (USD, ABC, BGEO, OBJ…)",
+        )
+        self.ed_main_asset.setText(default_asset or "")
+        self.ed_main_asset.btn_browse.clicked.connect(self._pick_asset)
+        lbl, w = self._form_field("Main Asset File", self.ed_main_asset)
+        geo_form.addRow(lbl, w)
+
         self.ed_asset_name = QtWidgets.QLineEdit("")
-        form.addRow("Asset Name", self.ed_asset_name)
-        # Keep asset name in sync when main asset path changes (if user hasn't edited it)
+        self.ed_asset_name.setPlaceholderText("Auto-filled from file name")
+        lbl, w = self._form_field("Asset Name", self.ed_asset_name)
+        geo_form.addRow(lbl, w)
         self._user_edited_asset_name = False
         self.ed_asset_name.textEdited.connect(self._on_asset_name_edited)
-        self.ed_main_asset.textChanged.connect(self._on_main_asset_changed)
-        # Initialize from default
+        self.ed_main_asset.textChanged().connect(self._on_main_asset_changed)
         self._on_main_asset_changed(self.ed_main_asset.text())
 
-        # Asset Variant Set name
         self.ed_asset_vset = QtWidgets.QLineEdit("geo_variant")
-        form.addRow("Asset Variant Set", self.ed_asset_vset)
+        lbl, w = self._form_field("Asset Variant Set", self.ed_asset_vset)
+        geo_form.addRow(lbl, w)
 
-        # Asset Variant Files list
-        self.asset_list = _ListEditor(self, mode="file")
-        form.addRow("Asset Variant Files", self.asset_list)
+        self.asset_list = _ListEditor(
+            self,
+            mode="file",
+            add_label="Add Files…",
+            remove_label="Remove",
+            list_min_height=88,
+        )
+        lbl, w = self._form_field(
+            "Asset Variant Files",
+            self.asset_list,
+            tooltip="Optional extra geometry files included as USD variants.",
+        )
+        geo_form.addRow(lbl, w)
 
-        # Create Geo Variants checkbox
+        options_box = QtWidgets.QWidget()
+        options_layout = QtWidgets.QVBoxLayout(options_box)
+        options_layout.setContentsMargins(0, 0, 0, 0)
+        options_layout.setSpacing(6)
         self.cb_create_geo_variants = QtWidgets.QCheckBox("Create Geometry Variants")
         self.cb_create_geo_variants.setChecked(True)
-        self.cb_create_geo_variants.setToolTip("Include geometry variants if provided (disable to use only main geometry file)")
-        form.addRow("Create Geo Variants", self.cb_create_geo_variants)
-
-        # Lowercase Material Names checkbox
+        self.cb_create_geo_variants.setToolTip(
+            "Include geometry variants if provided (disable to use only main geometry file)"
+        )
         self.cb_lowercase_material_names = QtWidgets.QCheckBox("Lowercase Material Names")
         self.cb_lowercase_material_names.setChecked(False)
-        self.cb_lowercase_material_names.setToolTip("Convert material names to lowercase (enable for legacy compatibility, disable to preserve original casing)")
-        form.addRow("Lowercase Materials", self.cb_lowercase_material_names)
-
-        # Main Texture Folder (moved up to replace Material Name)
-        self.ed_main_maps = QtWidgets.QLineEdit(default_maps or "")
-        btn_maps = QtWidgets.QPushButton("…")
-        btn_maps.setFixedWidth(28)
-        row_maps = QtWidgets.QHBoxLayout()
-        row_maps.addWidget(self.ed_main_maps)
-        row_maps.addWidget(btn_maps)
-        form.addRow("Main Textures Folder", row_maps)
-        btn_maps.clicked.connect(self._pick_folder)
-
-        # Material Variant Set
-        self.ed_look_vset = QtWidgets.QLineEdit("mtl_variant")
-        form.addRow("Material Variant Set", self.ed_look_vset)
-
-        # Material Variant Folders list
-        self.maps_list = _ListEditor(self, mode="dir")
-        self.maps_list.setToolTip(
-            "Optional. Leave empty to auto-detect material variant folders from the main textures folder."
+        self.cb_lowercase_material_names.setToolTip(
+            "Convert material names to lowercase (enable for legacy compatibility)"
         )
-        lbl_material_variants = QtWidgets.QLabel("Material Variant Folders")
-        lbl_material_variants.setToolTip(self.maps_list.toolTip())
-        form.addRow(lbl_material_variants, self.maps_list)
+        options_layout.addWidget(self.cb_create_geo_variants)
+        options_layout.addWidget(self.cb_lowercase_material_names)
+        lbl, w = self._form_field("Options", options_box)
+        geo_form.addRow(lbl, w)
 
-        # Replace the default 'Add' button with 'Add Folders…' using the same button (size/position)
+        geo_layout.addLayout(geo_form)
+        content_layout.addWidget(geo_group)
+
+        # ── Textures & Materials ──────────────────────────────────────────
+        tex_group, tex_layout = self._make_section(
+            "Textures & Materials",
+            "Texture root folder and optional material variant folders.",
+        )
+        tex_form = QtWidgets.QFormLayout()
+        HoudiniTheme.apply_form_layout(tex_form)
+        tex_form.setVerticalSpacing(10)
+        tex_form.setHorizontalSpacing(12)
+
+        self.ed_main_maps = _PathPickerRow(
+            placeholder="Select textures root folder…",
+            browse_label="Browse…",
+            browse_tooltip="Folder containing texture sets (or KB3D Textures subfolder)",
+        )
+        self.ed_main_maps.setText(default_maps or "")
+        self.ed_main_maps.btn_browse.clicked.connect(self._pick_folder)
+        lbl, w = self._form_field("Main Textures Folder", self.ed_main_maps)
+        tex_form.addRow(lbl, w)
+
+        self.ed_look_vset = QtWidgets.QLineEdit("mtl_variant")
+        lbl, w = self._form_field("Material Variant Set", self.ed_look_vset)
+        tex_form.addRow(lbl, w)
+
+        self.maps_list = _ListEditor(
+            self,
+            mode="dir",
+            add_label="Add Folders…",
+            remove_label="Remove",
+            list_min_height=88,
+        )
+        maps_tip = "Optional. Leave empty to auto-detect material variant folders from the main textures folder."
+        self.maps_list.setToolTip(maps_tip)
+        lbl, w = self._form_field("Material Variant Folders", self.maps_list, tooltip=maps_tip)
+        tex_form.addRow(lbl, w)
         try:
             self.maps_list.btn_add.clicked.disconnect()
         except Exception:
             pass
-        self.maps_list.btn_add.setText("Add")
-        self.maps_list.btn_add.setToolTip("Add multiple material variant folders at once")
         self.maps_list.btn_add.clicked.connect(self._on_add_multiple_material_folders)
 
-        # Lookdev setup toggle (on by default — turntable/camera/render branch)
+        tex_layout.addLayout(tex_form)
+        content_layout.addWidget(tex_group)
+
+        # ── Lookdev & Rendering ───────────────────────────────────────────
+        look_group, look_layout = self._make_section(
+            "Lookdev & Rendering",
+            "Turntable setup, lighting, and optional HDRI environment maps.",
+        )
+        look_form = QtWidgets.QFormLayout()
+        HoudiniTheme.apply_form_layout(look_form)
+        look_form.setVerticalSpacing(10)
+        look_form.setHorizontalSpacing(12)
+
+        look_opts = QtWidgets.QWidget()
+        look_opts_layout = QtWidgets.QVBoxLayout(look_opts)
+        look_opts_layout.setContentsMargins(0, 0, 0, 0)
+        look_opts_layout.setSpacing(6)
         self.cb_create_lookdev = QtWidgets.QCheckBox("Create Lookdev Setup")
         self.cb_create_lookdev.setChecked(True)
-        form.addRow("Lookdev Setup", self.cb_create_lookdev)
-
-        # Setup Light Rig toggle
         self.cb_create_light_rig = QtWidgets.QCheckBox("Setup Light Rig")
         self.cb_create_light_rig.setChecked(True)
-        form.addRow("Light Rig", self.cb_create_light_rig)
-
-        # Environment Lights enable and HDRI paths (optional)
         self.cb_enable_env_lights = QtWidgets.QCheckBox("Enable Environment Lights")
         self.cb_enable_env_lights.setChecked(True)
-        form.addRow("Environment Lights", self.cb_enable_env_lights)
-        image_filter = "Images (*.exr *.hdr *.rat *.jpg *.jpeg *.png *.tif *.tiff);;All Files (*)"
-        self.env_lights_list = _ListEditor(self, mode="file", file_filter=image_filter)
-        form.addRow("Env Light HDRI Paths", self.env_lights_list)
+        look_opts_layout.addWidget(self.cb_create_lookdev)
+        look_opts_layout.addWidget(self.cb_create_light_rig)
+        look_opts_layout.addWidget(self.cb_enable_env_lights)
+        lbl, w = self._form_field("Pipeline", look_opts)
+        look_form.addRow(lbl, w)
 
-        # React to lookdev toggle to enable/disable dependent controls (use boolean signal)
+        image_filter = "Images (*.exr *.hdr *.rat *.jpg *.jpeg *.png *.tif *.tiff);;All Files (*)"
+        self.env_lights_list = _ListEditor(
+            self,
+            mode="file",
+            file_filter=image_filter,
+            add_label="Add HDRI…",
+            remove_label="Remove",
+            list_min_height=72,
+        )
+        lbl, w = self._form_field(
+            "Env Light HDRI Paths",
+            self.env_lights_list,
+            tooltip="Optional HDRI files used when environment lights are enabled.",
+        )
+        look_form.addRow(lbl, w)
+
+        look_layout.addLayout(look_form)
+        content_layout.addWidget(look_group)
+        content_layout.addStretch(1)
+
+        scroll.setWidget(content)
+        root.addWidget(scroll, 1)
+
         self.cb_create_lookdev.toggled.connect(self._on_lookdev_toggled)
         self.cb_enable_env_lights.toggled.connect(self._update_env_lights_enabled)
-        # Initialize state
         self._on_lookdev_toggled(self.cb_create_lookdev.isChecked())
 
-        lay.addLayout(form)
-
-        # Buttons
         btn_box = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
+            QtWidgets.QDialogButtonBox.StandardButton.Ok
+            | QtWidgets.QDialogButtonBox.StandardButton.Cancel
         )
-        lay.addWidget(btn_box)
+        btn_box.setContentsMargins(0, 4, 0, 0)
+        root.addWidget(btn_box)
         btn_box.accepted.connect(self.accept)
         btn_box.rejected.connect(self.reject)
+        self._apply_button_styles(btn_box)
 
-        # Small size policy
-        self.resize(560, 640)
+        self.resize(640, 720)
 
     def _pick_multiple_directories(self) -> List[str]:
         """Open a non-native QFileDialog that allows selecting multiple directories.
@@ -276,22 +649,22 @@ class AssetMaterialVariantsDialog(QtWidgets.QDialog):
         for d in folders:
             if not d or d in existing:
                 continue
-            item = QtWidgets.QListWidgetItem(d)
-            item.setToolTip(d)
-            self.maps_list.listw.addItem(item)
+            self.maps_list.append_item(d)
+            existing.add(d)
 
     def _pick_asset(self) -> None:
         val, _ = QtWidgets.QFileDialog.getOpenFileName(
             self,
             "Select main geometry file",
-            "",
+            self.ed_main_asset.text() or "",
             "Geometry (*.usd *.usda *.usdc *.abc *.obj *.bgeo *.bgeo.sc);;All Files (*)",
         )
         if val:
             self.ed_main_asset.setText(val)
 
     def _pick_folder(self) -> None:
-        val = QtWidgets.QFileDialog.getExistingDirectory(self, "Select texture folder")
+        start_dir = self.ed_main_maps.text() or ""
+        val = QtWidgets.QFileDialog.getExistingDirectory(self, "Select texture folder", start_dir)
         if val:
             self.ed_main_maps.setText(val)
 
@@ -349,27 +722,17 @@ class AssetMaterialVariantsDialog(QtWidgets.QDialog):
 
 class SimpleProgressDialog(QtWidgets.QDialog):
     def __init__(self, title="LOPs Asset Builder v3", parent=None):
-        if parent is None:
-            try:
-                parent = hou.qt.mainWindow()
-            except Exception:
-                parent = None
-        super().__init__(parent)
-        self.setWindowTitle(title)
-        self.setMinimumWidth(700)
-        self.setMinimumHeight(640)
+        # Must stay top-level: parenting to hou.qt.mainWindow() hides the window on H22.
+        super().__init__(None)
         self.setModal(False)
-        HoudiniTheme.apply(self)
-        try:
-            self.setWindowFlag(QtCore.Qt.WindowType.WindowStaysOnTopHint, True)
-        except Exception:
-            pass
-        # Make the dialog larger by default (about ~25% bigger) and easier to resize while working
+        HoudiniTheme.setup_tool_window(
+            self,
+            title=title,
+            min_width=700,
+            min_height=640,
+        )
         try:
             self.resize(800, 640)
-        except Exception:
-            pass
-        try:
             self.setSizeGripEnabled(True)
         except Exception:
             pass
@@ -488,13 +851,27 @@ class SimpleProgressDialog(QtWidgets.QDialog):
     def log(self, msg: str):
         self.log_edit.append(msg)
         try:
-            self.log_edit.moveCursor(QtGui.QTextCursor.End)
+            self.log_edit.moveCursor(QtGui.QTextCursor.MoveOperation.End)
         except Exception:
             self.log_edit.ensureCursorVisible()
 
     def refresh(self) -> None:
         try:
-            QtWidgets.QApplication.processEvents(QtCore.QEventLoop.AllEvents, 50)
+            QtWidgets.QApplication.processEvents(
+                QtCore.QEventLoop.ProcessEventsFlag.ExcludeUserInputEvents, 50
+            )
+        except Exception:
+            pass
+
+    def repaint_widgets(self) -> None:
+        """Force immediate paint without pumping Qt events (safe during LOP/VOP cooks)."""
+        try:
+            self.log_edit.viewport().repaint()
+            self.log_edit.repaint()
+            self.progress_bar.repaint()
+            self.message_label.repaint()
+            self.title_label.repaint()
+            self.repaint()
         except Exception:
             pass
 
@@ -534,11 +911,28 @@ class ProgressReporter:
                 except Exception:
                     pass
                 print(f"[{title}] Progress window opened.")
+                self.flush_ui(full=True)
             else:
                 print(f"[{title}] No Qt application — logging to console / status bar.")
         except Exception as exc:
             print(f"[{title}] Progress window unavailable ({exc}) — logging to console / status bar.")
             self._use_qt = False
+
+    def flush_ui(self, *, full: bool = False) -> None:
+        """Show the progress window and pump Qt so logs/bar paint before heavy work."""
+        if not self._use_qt or self._dialog is None:
+            return
+        try:
+            self._dialog.present()
+            flags = (
+                QtCore.QEventLoop.ProcessEventsFlag.AllEvents
+                if full
+                else QtCore.QEventLoop.ProcessEventsFlag.ExcludeUserInputEvents
+            )
+            QtWidgets.QApplication.processEvents(flags, 80)
+            self._dialog.repaint_widgets()
+        except Exception:
+            pass
 
     def set_total(self, total: int):
         self._total = max(1, int(total))
@@ -560,8 +954,10 @@ class ProgressReporter:
                 self._dialog.set_message(message)
                 self._dialog.log(message)
             self._dialog.set_value(self._step)
-            if not self._suspend_events:
-                self._dialog.refresh()
+            if self._suspend_events:
+                self._dialog.repaint_widgets()
+            else:
+                self.flush_ui()
         else:
             if message:
                 print(f"[Progress] {self._step}/{self._total}: {message}")
@@ -574,8 +970,10 @@ class ProgressReporter:
             pass
         if self._use_qt:
             self._dialog.log(message)
-            if not self._suspend_events:
-                self._dialog.refresh()
+            if self._suspend_events:
+                self._dialog.repaint_widgets()
+            else:
+                self.flush_ui()
 
     def request_cancel(self):
         self._cancelled = True
@@ -592,6 +990,13 @@ class ProgressReporter:
 
         def __exit__(self, exc_type, exc, tb) -> None:
             self._reporter._suspend_events = self._previous
+            if self._reporter._use_qt and self._reporter._dialog is not None:
+                try:
+                    self._reporter._dialog.repaint_widgets()
+                except Exception:
+                    pass
+                if not self._reporter._suspend_events:
+                    self._reporter.flush_ui()
 
     def suspend_events(self) -> _SuspendEvents:
         """Disable Qt event pumping while running Houdini ops that crash if UI repaints."""
@@ -599,9 +1004,11 @@ class ProgressReporter:
 
     def is_cancelled(self) -> bool:
         if self._use_qt and not self._suspend_events:
-            # Pump the Qt event loop so ESC cancel is handled between build steps
+            # Pump lightly between build steps; never during LOP/VOP cooks.
             try:
-                QtWidgets.QApplication.processEvents(QtCore.QEventLoop.AllEvents, 50)
+                QtWidgets.QApplication.processEvents(
+                    QtCore.QEventLoop.ProcessEventsFlag.ExcludeUserInputEvents, 25
+                )
             except Exception:
                 pass
             if self._dialog is not None:

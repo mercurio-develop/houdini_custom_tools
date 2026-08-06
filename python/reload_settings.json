@@ -5,6 +5,7 @@
     "testing",
     "dev",
     "_archive",
+    "ui",
     ".venv",
     "venv",
     "env",
@@ -21,5 +22,19 @@
     "utils/dev",
     "utils/testing",
     "tools/asset_library_builder/test_kb3d.py"
+  ],
+  "reload_exclude_modules": [
+    "custom_utils",
+    "tools.lops_asset_builder_v3.componentoutput_custom",
+    "tools.lops_asset_builder_v3.subnet_lookdev_setup",
+    "tools.lops_asset_builder_v3.batch_asset_builder",
+    "tools.lops_asset_builder_v3.asset_builder_ui",
+    "tools.material_tools.TexToMtlX_V2.tex_to_mtlx",
+    "tools.file_path_manager"
+  ],
+  "reload_exclude_module_prefixes": [
+    "ui.",
+    "PySide6.",
+    "PySide2."
   ]
 }

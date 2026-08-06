@@ -620,36 +620,40 @@ class MtlxMaterial:
 
     def create_materialx(self):
         '''Creates a MaterialX setup'''
+        from modules.houdini_node_utils import suppress_gc_during_cook
+
         try:
-            material_lib_info = self._prepare_material_info()
+            with suppress_gc_during_cook():
+                material_lib_info = self._prepare_material_info()
 
-            # Create subnet according to policy
-            subnet_context, mat_name, action = self._create_material_subnet(material_lib_info)
-            if action == "skipped":
-                return mat_name, "skipped"
+                # Create subnet according to policy
+                subnet_context, mat_name, action = self._create_material_subnet(material_lib_info)
+                if action == "skipped":
+                    return mat_name, "skipped"
 
-            # Main nodes
-            mtlx_standard_surf, mtlx_displacement = self._create_main_nodes(subnet_context)
+                # Main nodes
+                mtlx_standard_surf, mtlx_displacement = self._create_main_nodes(subnet_context)
 
-            # Place2D if non-UDIM
-            place2d = self._setup_place2d(subnet_context, material_lib_info)
+                # Place2D if non-UDIM
+                place2d = self._setup_place2d(subnet_context, material_lib_info)
 
-            # Textures
-            self._process_textures(subnet_context, mtlx_standard_surf, mtlx_displacement, material_lib_info, place2d)
+                # Textures
+                self._process_textures(subnet_context, mtlx_standard_surf, mtlx_displacement, material_lib_info, place2d)
 
-            # Bump/Normal
-            self._setup_bump_normal(subnet_context, mtlx_standard_surf, material_lib_info, place2d)
+                # Bump/Normal
+                self._setup_bump_normal(subnet_context, mtlx_standard_surf, material_lib_info, place2d)
 
-            # Apply glass defaults if applicable
-            self._apply_glass_defaults(mtlx_standard_surf, material_lib_info)
+                # Apply glass defaults if applicable
+                self._apply_glass_defaults(mtlx_standard_surf, material_lib_info)
 
-            # Layout
-            self._layout_nodes(subnet_context)
+                # Layout
+                self._layout_nodes(subnet_context)
 
-            # Return final name + action ("created" or "overridden" or "renamed")
-            return mat_name, action
+                # Return final name + action ("created" or "overridden" or "renamed")
+                return mat_name, action
 
         except Exception as e:
+            mat_name = getattr(self, "material_to_create", "material")
             print(f"Failed to create material subnet in {mat_name}. {str(e)} ")
             hou.ui.displayMessage(f"Error creating MaterialX : {str(e)}", severity=hou.severityType.Error)
             # Report failure as skipped so the loop continues gracefully
