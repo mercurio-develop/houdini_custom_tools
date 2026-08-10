@@ -1,0 +1,64 @@
+═══════════════════════════════════════════════════════════════════════════════
+  HOUDINI MCP SERVER (HMCP) - QUICK START — Houdini 22 + Cursor
+═══════════════════════════════════════════════════════════════════════════════
+
+Connect Cursor to Houdini in ~5 minutes.
+
+STEP 1: INSTALL UV
+───────────────────────────────────────────────────────────────────────────────
+$ curl -LsSf https://astral.sh/uv/install.sh | sh
+$ uv --version
+
+STEP 2: INSTALL DEPENDENCIES
+───────────────────────────────────────────────────────────────────────────────
+$ cd $CUSTOM_TOOLS/scripts/python/HMCP
+$ uv sync
+$ python config_helper.py
+
+STEP 3: CURSOR MCP CONFIG
+───────────────────────────────────────────────────────────────────────────────
+Project config: scripts/.cursor/mcp.json (already in repo)
+
+Or paste config_helper.py output into ~/.cursor/mcp.json
+
+STEP 4: START HOUDINI SERVER
+───────────────────────────────────────────────────────────────────────────────
+In Houdini:
+  Shelf → Custom Tools → HMCP   (toggle ON)
+
+Or Python shell:
+>>> from HMCP import start_server
+>>> start_server()
+
+STEP 5: RESTART CURSOR
+───────────────────────────────────────────────────────────────────────────────
+Settings → MCP → confirm "houdini" is green
+
+STEP 6: TEST IN CURSOR CHAT
+───────────────────────────────────────────────────────────────────────────────
+"Get Houdini scene info"
+"Execute: print(hou.applicationVersionString())"
+
+TERMINAL SMOKE TEST
+───────────────────────────────────────────────────────────────────────────────
+$ export PYTHONPATH="$CUSTOM_TOOLS/scripts/python:$PYTHONPATH"
+$ /opt/hfs22.0.368/bin/hython $CUSTOM_TOOLS/scripts/python/HMCP/smoke_test_tcp.py
+
+PIPELINE TOOLS (via MCP)
+───────────────────────────────────────────────────────────────────────────────
+- run_lops_asset_builder   — build from JSON config
+- validate_asset_folder    — material validation
+- reload_custom_tools      — pick up code edits
+- scan_asset_folder        — detect geo/tex layout
+
+DOCUMENTATION
+───────────────────────────────────────────────────────────────────────────────
+- Cursor setup:  CURSOR_SETUP.md
+- Full guide:    README.md
+
+TROUBLESHOOTING
+───────────────────────────────────────────────────────────────────────────────
+Port stuck?  Shelf → FORCESTART
+Diagnose:   from HMCP.diagnose_server import diagnose_server; diagnose_server()
+
+═══════════════════════════════════════════════════════════════════════════════

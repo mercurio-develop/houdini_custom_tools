@@ -1,0 +1,11 @@
+.idea/*
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Machine-specific MCP config (template at repo root .cursor/mcp.json.example)
+.cursor/mcp.json
+
+# JLTools decompiled archive (proprietary — do not push to GitHub)
+python/tools/jltools_decompiled/

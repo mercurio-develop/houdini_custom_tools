@@ -1,0 +1,16 @@
+{
+  "ftrack": {
+    "server_url": "https://YOUR_STUDIO.ftrackapp.com",
+    "api_user": "your.api.user@example.com",
+    "api_key": "YOUR_FTRACK_API_KEY"
+  },
+  "iconik": {
+    "base_url": "https://app.iconik.io",
+    "app_id": "YOUR_ICONIK_APP_ID",
+    "auth_token": "YOUR_ICONIK_AUTH_TOKEN",
+    "storage_id": "YOUR_DEFAULT_FILES_STORAGE_UUID",
+    "upload_chunk_mb": 32,
+    "max_upload_retries": 3
+  },
+  "publish_location_name": "auto"
+}

@@ -1,0 +1,9 @@
+{
+  "enable": "true",
+  "env": [
+    {
+      "CUSTOM_TOOLS": "$HOUDINI_USER_PREF_DIR/custom_tools"
+    }
+  ],
+  "hpath": "$CUSTOM_TOOLS"
+}

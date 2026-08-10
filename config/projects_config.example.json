@@ -1,0 +1,31 @@
+[
+  {
+    "MY SHOW": {
+      "PROJECT_ACTIVE": true,
+      "PROJECT_CODE": "MSH",
+      "PROJECT_FOLDERS": [
+        "geo",
+        "abc",
+        "tex",
+        "render",
+        "cache",
+        "seq",
+        "assets"
+      ],
+      "PROJECT_FPS": "24",
+      "PROJECT_PATH": "/path/to/your/projects/MY SHOW"
+    }
+  },
+  {
+    "DEMO PROJECT": {
+      "PROJECT_ACTIVE": false,
+      "PROJECT_CODE": "DEMO",
+      "PROJECT_FOLDERS": [
+        "seq",
+        "assets"
+      ],
+      "PROJECT_FPS": "24",
+      "PROJECT_PATH": "/path/to/your/projects/DEMO PROJECT"
+    }
+  }
+]

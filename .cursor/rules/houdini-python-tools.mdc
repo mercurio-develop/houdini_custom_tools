@@ -1,0 +1,48 @@
+---
+description: Python coding conventions for Houdini custom_tools pipeline scripts
+globs: scripts/python/**/*.py
+alwaysApply: false
+---
+
+# Houdini Custom Tools — Python Conventions
+
+## Structure
+
+- Tool logic lives under `scripts/python/tools/<package>/`, not in shelf XML.
+- Shared helpers go in `scripts/python/modules/`, not duplicated across tools.
+- Config uses `@dataclass` (see `AssetBuilderConfig`, `PSXAssetConfig`).
+- Long builds use `ProgressLike` / `ProgressReporter`; log via `progress.log()`.
+- Node names: use `_sanitize()` from `modules.misc_utils`.
+
+## Imports
+
+```python
+from tools.lops_asset_builder_v3.asset_builder_config import AssetBuilderConfig
+from modules.houdini_node_utils import set_parm
+from modules.misc_utils import _sanitize
+```
+
+- Prefer extending existing products over parallel builders (see `ARCHITECTURE.md`).
+- Do not import `hou`-dependent UI at module level without guards.
+
+## Houdini runtime
+
+- Avoid side effects at import time (no node creation, no UI on import).
+- Guard UI entry points: check selection/context; use `hou.ui.displayMessage` for errors.
+- After editing Python in a live session: `custom_utils.reload_packages({"altclick": True})` or HMCP `reload_custom_tools`.
+
+## Shelf sync
+
+- Every new shelf tool must call a function in `tools/`, not inline logic in `custom_tools.shelf`.
+- Use `importlib.reload(module)` in shelf scripts for dev iteration.
+
+## Testing
+
+- Hou-free modules: `python3 -m py_compile path/to/module.py`
+- Dither/texture utils: test without `hou` (direct import of pure modules).
+- Integration: HMCP `execute_code` or `hython` after HMCP server is running.
+
+## Scope
+
+- Minimal diffs; match surrounding naming and patterns.
+- Archive superseded tools to `tools/_archive/` with a short README.

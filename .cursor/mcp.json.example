@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "houdini": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "/path/to/custom_tools/scripts/python/HMCP",
+        "python",
+        "/path/to/custom_tools/scripts/python/HMCP/houdini_mcp_bridge.py"
+      ]
+    },
+    "production-hub": {
+      "command": "python3",
+      "args": [
+        "/path/to/custom_tools/scripts/python/mcp/production_hub_server.py"
+      ],
+      "env": {
+        "PYTHONPATH": "/path/to/custom_tools/scripts/python",
+        "CUSTOM_TOOLS": "/path/to/custom_tools"
+      }
+    }
+  }
+}

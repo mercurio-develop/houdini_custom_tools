@@ -1,0 +1,70 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+.python-version
+
+# Environment files
+integrations/.env
+.env.*
+.envrc
+
+# Tool caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Build and distribution artifacts
+build/
+dist/
+.eggs/
+*.egg-info/
+pip-wheel-metadata/
+
+# IDE/editor settings
+.idea/
+.vscode/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Temp/cache (generic)
+cache/
+tmp/
+
+# HMCP bridge venv only
+HMCP/.venv/
+
+# Documentation session notes (not part of the codebase)
+docs/
+
+# Integration secrets (copy from integrations.example.json)
+integrations.json
+config/integrations.json
+
+# JLTools decompiled archive — personal learning only; proprietary (Jorge Lega)
+tools/jltools_decompiled/
+
+# Optional vendored wheels for Houdini
+vendor/
+python/vendor/
+
+# Accidental pip artifacts
+=
+
+# IDE / caches (do not commit)
+.claude/

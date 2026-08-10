@@ -1,0 +1,1099 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<shelfDocument>
+  <!-- This file contains definitions of shelves, toolbars, and tools.
+ It should not be hand-edited when it is being used by the application.
+ Note, that two definitions of the same element are not allowed in
+ a single file. -->
+
+  <toolshelf name="Custom Tools" label="Custom Tools">
+    <memberTool name="Reload Packages"/>
+    <memberTool name="create_project"/>
+    <memberTool name="clean_logs"/>
+    <memberTool name="Project Manager"/>
+    <memberTool name="Scene Cache Mangater"/>
+    <memberTool name="batch_asset_builder"/>
+    <memberTool name="lops_asset_builder"/>
+    <memberTool name="psx_tools"/>
+    <memberTool name="lops_light_rig"/>
+    <memberTool name="place_light_highlight"/>
+    <memberTool name="split_geo"/>
+    <memberTool name="group-importer"/>
+    <memberTool name="top_net"/>
+    <memberTool name="iconik_ingest_top"/>
+    <memberTool name="file_path_manager"/>
+    <memberTool name="collect_nodes_script"/>
+    <memberTool name="customize_variant_name"/>
+    <memberTool name="component_material_custom"/>
+    <memberTool name="asset_builder_template"/>
+    <memberTool name="merges_nodes_from_file"/>
+    <memberTool name="tx_to_mtlx_v2"/>
+    <memberTool name="show_node_inputs"/>
+    <memberTool name="node_batch_setter"/>
+    <memberTool name="texture_from_disk"/>
+    <memberTool name="get_node_code"/>
+    <memberTool name="HMCP"/>
+    <memberTool name="convert_to_mtlx_usd"/>
+    <memberTool name="select_all_node_of_same_type"/>
+  </toolshelf>
+
+  <tool name="Reload Packages" label="Reload Packages and Modules" icon="hicon:/SVGIcons.index?NETVIEW_reload_needsupdate.svg">
+    <helpText><![CDATA["""Reload Packages """]]></helpText>
+    <script scriptType="python"><![CDATA[import custom_utils
+
+custom_utils.reload_packages(kwargs)]]></script>
+  </tool>
+
+  <tool name="Project Manager" label="Project Manager" icon="hicon:/SVGIcons.index?LOP_stagemanager.svg">
+    <script scriptType="python"><![CDATA[from pipeline.project_manager import ProjectManager
+
+win = ProjectManager()
+win.show()]]></script>
+  </tool>
+
+  <tool name="Scene Cache Mangater" label="Scene Cache Manager" icon="hicon:/SVGIcons.index?LOP_filecache.svg">
+    <script scriptType="python"><![CDATA[from tools import scene_cache_manager as cache_m
+
+win = cache_m.SceneCacheManagerUI()
+win.show()
+]]></script>
+  </tool>
+
+  <tool name="lops_light_rig" label="LOPS Light Rig" icon="hicon:/SVGIcons.index?BUTTONS_add_light.svg">
+    <script scriptType="python"><![CDATA[from tools import lops_light_rig
+
+lops_light_rig.create_three_point_light()]]></script>
+  </tool>
+
+  <tool name="place_light_highlight" label="Place Light Highlight" icon="hicon:/SVGIcons.index?BUTTONS_light_solo.svg">
+    <script scriptType="python"><![CDATA[scene_viewer = hou.ui.paneTabOfType(hou.paneTabType.SceneViewer)
+scene_viewer.setCurrentState("_place_light")]]></script>
+  </tool>
+
+  <tool name="lops_asset_builder" label="Lops Asset Builder" icon="hicon:/SVGIcons.index?SHELF_asset_library.svg">
+    <script scriptType="python"><![CDATA[import importlib
+import tools.lops_asset_builder_v3.lops_asset_builder_v3 as lops_asset_builder_v3
+
+importlib.reload(lops_asset_builder_v3)
+lops_asset_builder_v3.create_component_builder()]]></script>
+  </tool>
+
+  <tool name="psx_tools" label="PSX Retro Tools" icon="hicon:/SVGIcons.index?SOP_polyreduce.svg">
+    <script scriptType="python"><![CDATA[import importlib
+from tools.psx_tools import psx_tools_ui
+
+importlib.reload(psx_tools_ui)
+psx_tools_ui.show_psx_tools_dialog()]]></script>
+  </tool>
+
+  <tool name="clean_logs" label="Clean Logs" icon="hicon:/SVGIcons.index?ENGINE_clean_temp.svg">
+    <script scriptType="python"><![CDATA[from custom_utils import clean_log
+
+clean_log()]]></script>
+  </tool>
+
+  <tool name="create_project" label="Create Project" icon="hicon:/SVGIcons.index?SOP_filecache.svg">
+    <script scriptType="python"><![CDATA[from pipeline.create_project import CreateProject
+win = CreateProject()
+win.show()
+
+
+
+]]></script>
+  </tool>
+
+  <tool name="tx_to_mtlx_v2" label="Tx To Mtlx V2" icon="hicon:/SVGIcons.index?LOP_editmaterial.svg">
+    <script scriptType="python"><![CDATA[from tools.material_tools.TexToMtlX_V2 import tex_to_mtlx as to_mt
+
+win = to_mt.TxToMtlx()
+win.show()
+
+]]></script>
+  </tool>
+
+  <tool name="split_geo" label="Split Geo" icon="hicon:/SVGIcons.index?DATATYPES_geometrydata.svg">
+    <script scriptType="python"><![CDATA[from tools import split_geo
+
+split_geo.split_geo();]]></script>
+  </tool>
+
+  <tool name="batch_importer" label="BATCH IMPORTER WITH ANALYZE" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[from tools import batch_importer_with_analyze
+
+batch_importer_with_analyze.batch_importer()]]></script>
+  </tool>
+
+  <tool name="spaceship_visualizer" label="Spaceship Visualizer" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[
+from tools import spaceship_visualizer
+spaceship_visualizer.main()]]></script>
+  </tool>
+
+  <tool name="asset_builder" label="Asset Builder" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[from tools.asset_builder import asset_builder
+
+# Show the UI dialog to select an asset file
+asset_builder.show_asset_builder_ui()]]></script>
+  </tool>
+
+  <tool name="asset_builder_v2" label="Asset Builder V2" icon="hicon:/SVGIcons.index?SOP_usdconfiguregeometry.svg">
+    <script scriptType="python"><![CDATA[from tools.lops_asset_builder_workflow.main import create_lops_asset_builder_workflow
+
+create_lops_asset_builder_workflow()
+]]></script>
+  </tool>
+
+  <tool name="group-importer" label="Group Importer" icon="hicon:/SVGIcons.index?MISC_asset_browser.svg">
+    <script scriptType="python"><![CDATA[from tools.batch_import_workflow import batch_import_workflow
+
+workflow = batch_import_workflow.BatchImportWorkflow()
+
+workflow.create_workflow()]]></script>
+  </tool>
+
+  <tool name="create_lookdev_camera_for_selected" label="Create Camera" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[from tools import lops_lookdev_camera
+lops_lookdev_camera.create_lookdev_camera_for_selected()]]></script>
+  </tool>
+
+  <tool name="top_net" label="Top net " icon="hicon:/SVGIcons.index?ENGINE_asset_help.svg">
+    <script scriptType="python"><![CDATA[import hou
+import os
+
+def create_export_top_network():
+    """
+    Create a TOP network to export many split primitives from FBX or OBJ files.
+    Based on split_geo functionality to get context from *_OUT nulls.
+    """
+
+    #--------------------------------------------------------------
+    # 0. Parent SOP network that already holds the *_OUT nulls
+    #--------------------------------------------------------------
+    sel = hou.selectedNodes()
+    if not sel:
+        raise hou.ui.displayMessage("Select a file node inside the SOP network first.")
+    sop_parent = sel[0].parent()
+
+    #--------------------------------------------------------------
+    # 1. TOP network
+    #--------------------------------------------------------------
+    file_path = sel[0].parm("file").eval()
+    top_net_name = os.path.splitext(os.path.basename(file_path))[0]
+    folder_path = os.path.dirname(file_path)
+    topnet = sop_parent.createNode("topnet", top_net_name)
+    gather = topnet.createNode("pythonprocessor", "gather_parts")
+    rop_geo = topnet.createNode("ropgeometry", "export_bgeo")
+    rop_geo.setInput(0, gather)
+    top_geo_import = hou.node(f"{topnet.path()}/geometryimport")
+    if top_geo_import is not None:
+        top_geo_import.destroy()
+
+        #--------------------------------------------------------------
+    # 2. Python Processor â one work item per *_OUT null
+    #--------------------------------------------------------------
+    generate_code = '''
+import hou
+import os
+
+net = hou.node("../..")  # SOP net
+nulls = []
+folder_path = None
+
+# Find folder path from file nodes - improved approach
+for n in net.children():
+    if n.type().name() == "file":
+        file_path = n.parm('file').eval()
+        if file_path:  # Check if file path is not empty
+            folder_path = os.path.dirname(file_path)
+            break  # Use the first valid file node found
+    
+# If no file node found, try to find from other import nodes
+if folder_path is None:
+    for n in net.children():
+        if n.type().name() in ["alembic", "filmboxfbx"]:  # Common import node types
+            file_parm = None
+            if hasattr(n, 'parm') and n.parm('fileName'):  # Alembic
+                file_parm = n.parm('fileName')
+            elif hasattr(n, 'parm') and n.parm('soppath'):  # FBX
+                file_parm = n.parm('soppath')
+            
+            if file_parm:
+                file_path = file_parm.eval()
+                if file_path:
+                    folder_path = os.path.dirname(file_path)
+                    break
+
+# Default folder path if none found
+if folder_path is None:
+    folder_path = hou.expandString("$HIP")  # Use hip file directory as fallback
+
+# Find all *_OUT null nodes
+for n in net.children():
+    if n.type().name() == "null" and n.name().endswith("_OUT"):
+        nulls.append(n)
+
+# Create work items for each null
+for i, n in enumerate(nulls):
+    wi = item_holder.addWorkItem(index=i)
+    wi.setStringAttrib("soppath", n.path())          
+    wi.setStringAttrib("partname", n.name()[:-4])  # Remove "_OUT" suffix   
+    wi.setStringAttrib("folderpath", folder_path)
+'''
+    gather.parm("generate").set(generate_code)
+
+    #--------------------------------------------------------------
+    # 3. ROP Geometry TOP
+    #--------------------------------------------------------------
+    rop_geo.parm("usesoppath").set(1)  # Turn on SOP Path
+    rop_geo.parm("soppath").set('`@soppath`')
+
+    # Create exports directory if it doesn't exist and set output path
+    rop_geo.parm("sopoutput").set("`@folderpath`/exports/`@partname`.bgeo.sc")
+    rop_geo.parm("pdg_cachemode").set(3)  # 3 = Write Files
+
+    #--------------------------------------------------------------
+    # 4. Tidy layout
+    #--------------------------------------------------------------
+    topnet.layoutChildren()
+
+    # Display success message
+    hou.ui.displayMessage(
+        f"TOP network '{topnet.name()}' created successfully!\n\n"
+        f"The network will:\n"
+        f"â¢ Find all *_OUT null nodes in the SOP network\n"
+        f"â¢ Export each part as a separate .bgeo.sc file\n"
+        f"â¢ Save files to: {folder_path}/exports/\n\n"
+        f"Click 'Cook Output Node' on the ROP Geometry node to start export.",
+        severity=hou.severityType.Message,
+        title="Export TOP Network Created"
+    )
+
+    return topnet
+    
+create_export_top_network()]]></script>
+  </tool>
+
+  <tool name="iconik_ingest_top" label="Iconik USD Ingest TOPs" icon="hicon:/SVGIcons.index?TOP_wedge.svg">
+    <script scriptType="python"><![CDATA[from tools.iconik_tops.create_iconik_ingest_top import create_iconik_ingest_top
+
+create_iconik_ingest_top()]]></script>
+  </tool>
+
+  <tool name="file_path_manager" label="File Path Manager" icon="hicon:/SVGIcons.index?TOP_fileremove.svg">
+    <script scriptType="python"><![CDATA[from tools import file_path_manager
+
+file_path_manager.FilePathsManagerUI().show()]]></script>
+  </tool>
+
+  <tool name="collect_nodes_script" label="Shader Nodes Script" icon="hicon:/SVGIcons.index?BUTTONS_material_include.svg">
+    <toolMenuContext name="network">
+      <contextOpType>Vop/collect</contextOpType>
+    </toolMenuContext>
+    <script scriptType="python"><![CDATA[
+import sys
+import toolutils
+
+outputitem = None
+inputindex = -1
+inputitem = None
+outputindex = -1
+
+num_args = 1
+h_extra_args = ''
+pane = toolutils.activePane(kwargs)
+if not isinstance(pane, hou.NetworkEditor):
+    pane = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor)
+    if pane is None:
+       hou.ui.displayMessage(
+               'Cannot create node: cannot find any network pane')
+       sys.exit(0)
+else: # We're creating this tool from the TAB menu inside a network editor
+    pane_node = pane.pwd()
+    if "outputnodename" in kwargs and "inputindex" in kwargs:
+        outputitem = pane_node.item(kwargs["outputnodename"])
+        inputindex = kwargs["inputindex"]
+        h_extra_args += 'set arg4 = "' + kwargs["outputnodename"] + '"\n'
+        h_extra_args += 'set arg5 = "' + str(inputindex) + '"\n'
+        num_args = 6
+    if "inputnodename" in kwargs and "outputindex" in kwargs:
+        inputitem = pane_node.item(kwargs["inputnodename"])
+        outputindex = kwargs["outputindex"]
+        h_extra_args += 'set arg6 = "' + kwargs["inputnodename"] + '"\n'
+        h_extra_args += 'set arg9 = "' + str(outputindex) + '"\n'
+        num_args = 9
+    if "autoplace" in kwargs:
+        autoplace = kwargs["autoplace"]
+    else:
+        autoplace = False
+    # If shift-clicked we want to auto append to the current
+    # node
+    if "shiftclick" in kwargs and kwargs["shiftclick"]:
+        if inputitem is None:
+            inputitem = pane.currentNode()
+            outputindex = 0
+    if "nodepositionx" in kwargs and             "nodepositiony" in kwargs:
+        try:
+            pos = [ float( kwargs["nodepositionx"] ),
+                    float( kwargs["nodepositiony"] )]
+        except:
+            pos = None
+    else:
+        pos = None
+
+    if not autoplace and not pane.listMode():
+        if pos is not None:
+            pass
+        elif outputitem is None:
+            pos = pane.selectPosition(inputitem, outputindex, None, -1)
+        else:
+            pos = pane.selectPosition(inputitem, outputindex,
+                                      outputitem, inputindex)
+
+    if pos is not None:
+        if "node_bbox" in kwargs:
+            size = kwargs["node_bbox"]
+            pos[0] -= size[0] / 2
+            pos[1] -= size[1] / 2
+        else:
+            pos[0] -= 0.573625
+            pos[1] -= 0.220625
+        h_extra_args += 'set arg2 = "' + str(pos[0]) + '"\n'
+        h_extra_args += 'set arg3 = "' + str(pos[1]) + '"\n'
+h_extra_args += 'set argc = "' + str(num_args) + '"\n'
+
+pane_node = pane.pwd()
+child_type = pane_node.childTypeCategory().nodeTypes()
+
+if 'subnet' not in child_type:
+   hou.ui.displayMessage(
+           'Cannot create node: incompatible pane network type')
+   sys.exit(0)
+
+# First clear the node selection
+pane_node.setSelected(False, True)
+
+h_path = pane_node.path()
+h_preamble = 'set arg1 = "' + h_path + '"\n'
+h_cmd = r'''
+if ($argc < 2 || "$arg2" == "") then
+   set arg2 = 0
+endif
+if ($argc < 3 || "$arg3" == "") then
+   set arg3 = 0
+endif
+# Automatically generated script
+# $arg1 - the path to add this node
+# $arg2 - x position of the tile
+# $arg3 - y position of the tile
+# $arg4 - input node to wire to
+# $arg5 - which input to wire to
+# $arg6 - output node to wire to
+# $arg7 - the type of this node
+# $arg8 - the node is an indirect input
+# $arg9 - index of output from $arg6
+
+\set noalias = 1
+set saved_path = `execute("oppwf")`
+opcf $arg1
+
+# Node $_stage_materiallibrary1_shader (Vop/collect)
+set _stage_materiallibrary1_shader = `run("opadd -e -n -v collect shader")`
+oplocate -x `$arg2 + 0` -y `$arg3 + 0` $_stage_materiallibrary1_shader
+opspareds '    multiparm {         name    "inputnum"         label    "Number of Inputs"         baseparm         invisible         default 0          parm {             name    "inputname#"             baseparm             label   "Input Name #"             invisible             export  none         }         parm {             name    "inputlabel#"             baseparm             label   "Input Label #"             invisible             export  none         }     }      parm {         name    "texture_folder"         label   "Texture Folder"         type    directory         default { "" }         parmtag { "script_callback_language" "python" }     }     parm {         name    "model_name"         label   "Model Name"         type    string         default { "" }         parmtag { "script_callback_language" "python" }     }     parm {         name    "texture_name"         label   "Texture Name"         type    string         default { "" }         parmtag { "script_callback_language" "python" }     }     groupcollapsible {         name    "folder1"         label   "Material"          parm {             name    "inherit_ctrl"             label   "Inherit from Class"             type    integer             default { "2" }             menu {                 "0" "Never"                 "1" "Always"                 "2" "Material Flag"             }             range   { 0 10 }         }         parm {             name    "shader_referencetype"             label   "Class Arc"             type    string             default { [ "n = hou.pwd()\\nn_hasFlag = n.isMaterialFlagSet()\\ni = n.evalParm(\'inherit_ctrl\')\\nr = \'none\'\\nif i == 1 or (n_hasFlag and i == 2):\\n    r = \'inherit\'\\nreturn r" python ] }             menu {                 "none"          "None"                 "reference"     "Reference"                 "inherit"       "Inherit"                 "specialize"    "Specialize"                 "represent"     "Represent"             }             parmtag { "sidefx::shader_isparm" "0" }             parmtag { "spare_category" "Shader" }         }         parm {             name    "shader_baseprimpath"             label   "Class Prim Path"             type    string             default { "/__class_mtl__/`$OS`" }             parmtag { "script_action" "import lopshaderutils\\nlopshaderutils.selectPrimFromInputOrFile(kwargs)" }             parmtag { "script_action_help" "Select a primitive in the Scene Viewer or Scene Graph Tree pane.\\nCtrl-click to select using the primitive picker dialog." }             parmtag { "script_action_icon" "BUTTONS_reselect" }             parmtag { "sidefx::shader_isparm" "0" }             parmtag { "sidefx::usdpathtype" "prim" }             parmtag { "spare_category" "Shader" }         }     }      parm {         name    "xn__"         label   "xn__"         type    string         default { "" }         parmtag { "script_callback_language" "python" }     } ' $_stage_materiallibrary1_shader
+opparm $_stage_materiallibrary1_shader  inputnum ( 1 )
+chblockbegin
+chadd -t 0 0 $_stage_materiallibrary1_shader shader_referencetype
+chkey -t 0 -v 0 -m 0 -a 0 -A 0 -T a  -F 'n = hou.pwd()\nn_hasFlag = n.isMaterialFlagSet()\ni = n.evalParm(\'inherit_ctrl\')\nr = \'none\'\nif i == 1 or (n_hasFlag and i == 2):\n    r = \'inherit\'\nreturn r' -l p $_stage_materiallibrary1_shader/shader_referencetype
+chblockend
+opparm -V 21.0.440 $_stage_materiallibrary1_shader inputnum ( 1 ) texture_folder ( '$JOB/assets/' ) texture_name ( '$OS' )
+opset -d off -r off -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -L off -M off -H on -E on $_stage_materiallibrary1_shader
+opexprlanguage -s hscript $_stage_materiallibrary1_shader
+opuserdata -n '___Version___' -v '21.0.440' $_stage_materiallibrary1_shader
+opuserdata -n '___toolcount___' -v '6' $_stage_materiallibrary1_shader
+opuserdata -n '___toolid___' -v 'collect_matx_shaders' $_stage_materiallibrary1_shader
+opset -p on $_stage_materiallibrary1_shader
+opcf $arg1
+
+# Node $_stage_materiallibrary1_materialx (Vop/subnet)
+set _stage_materiallibrary1_materialx = `run("opadd -e -n -v subnet materialx")`
+oplocate -x `$arg2 + -2.6559000000000004` -y `$arg3 + 0.075000000000000178` $_stage_materiallibrary1_materialx
+opspareds '    groupcollapsible {         name    "folder1"         label   "Karma Material Builder"         grouptag { "sidefx::shader_isparm" "0" }          parm {             name    "inherit_ctrl"             label   "Inherit from Class"             type    integer             default { "2" }             menu {                 "0" "Never"                 "1" "Always"                 "2" "Material Flag"             }             range   { 0 10 }         }         parm {             name    "shader_referencetype"             label   "Class Arc"             type    string             default { [ "n = hou.pwd()\\nn_hasFlag = n.isMaterialFlagSet()\\ni = n.evalParm(\'inherit_ctrl\')\\nr = \'none\'\\nif i == 1 or (n_hasFlag and i == 2):\\n    r = \'inherit\'\\nreturn r" python ] }             menu {                 "none"          "None"                 "reference"     "Reference"                 "inherit"       "Inherit"                 "specialize"    "Specialize"                 "represent"     "Represent"             }             parmtag { "sidefx::shader_isparm" "0" }             parmtag { "spare_category" "Shader" }         }         parm {             name    "shader_baseprimpath"             label   "Class Prim Path"             type    string             default { "/__class_mtl__/`$OS`" }             parmtag { "script_action" "import lopshaderutils\\nlopshaderutils.selectPrimFromInputOrFile(kwargs)" }             parmtag { "script_action_help" "Select a primitive in the Scene Viewer or Scene Graph Tree pane.\\nCtrl-click to select using the primitive picker dialog." }             parmtag { "script_action_icon" "BUTTONS_reselect" }             parmtag { "sidefx::shader_isparm" "0" }             parmtag { "sidefx::usdpathtype" "prim" }             parmtag { "spare_category" "Shader" }         }         parm {             name    "separator1"             label   "separator1"             type    separator             default { "" }         }         parm {             name    "tabmenumask"             label   "Tab Menu Mask"             type    string             default { "karma USD ^mtlxUsd* ^mtlxramp* ^hmtlxramp* ^hmtlxcubicramp* MaterialX parameter constant collect null genericshader subnet subnetconnector suboutput subinput" }             parmtag { "spare_category" "Tab Menu" }         }         parm {             name    "shader_rendercontextname"             label   "Render Context Name"             type    string             default { "kma" }             parmtag { "sidefx::shader_isparm" "0" }             parmtag { "spare_category" "Shader" }         }         parm {             name    "shader_forcechildren"             label   "Force Translation of Children"             type    toggle             default { "1" }             parmtag { "sidefx::shader_isparm" "0" }             parmtag { "spare_category" "Shader" }         }     }  ' $_stage_materiallibrary1_materialx
+chblockbegin
+chadd -t 0 0 $_stage_materiallibrary1_materialx shader_referencetype
+chkey -t 0 -v 0 -m 0 -a 0 -A 0 -T a  -F 'n = hou.pwd()\nn_hasFlag = n.isMaterialFlagSet()\ni = n.evalParm(\'inherit_ctrl\')\nr = \'none\'\nif i == 1 or (n_hasFlag and i == 2):\n    r = \'inherit\'\nreturn r' -l p $_stage_materiallibrary1_materialx/shader_referencetype
+chblockend
+opparm -V 21.0.440 $_stage_materiallibrary1_materialx
+opset -d on -r on -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -L off -M off -H on -E on $_stage_materiallibrary1_materialx
+opexprlanguage -s hscript $_stage_materiallibrary1_materialx
+opuserdata -n '___Version___' -v '21.0.440' $_stage_materiallibrary1_materialx
+opuserdata -n '___toolcount___' -v '6' $_stage_materiallibrary1_materialx
+opuserdata -n '___toolid___' -v 'collect_matx_shaders' $_stage_materiallibrary1_materialx
+opcf $_stage_materiallibrary1_materialx
+
+# Node $_stage_materiallibrary1_materialx_inputs (Vop/subinput)
+set _stage_materiallibrary1_materialx_inputs = `run("opadd -e -n -v subinput inputs")`
+oplocate -x `$arg2 + -9.2875390000000007` -y `$arg3 + 18.474977000000003` $_stage_materiallibrary1_materialx_inputs
+opset -d on -r on -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -L off -M off -H on -E off $_stage_materiallibrary1_materialx_inputs
+opexprlanguage -s hscript $_stage_materiallibrary1_materialx_inputs
+opuserdata -n '___Version___' -v '21.0.440' $_stage_materiallibrary1_materialx_inputs
+opuserdata -n '___toolcount___' -v '6' $_stage_materiallibrary1_materialx_inputs
+opuserdata -n '___toolid___' -v 'collect_matx_shaders' $_stage_materiallibrary1_materialx_inputs
+
+# Node $_stage_materiallibrary1_materialx_mtlxstandard_surface (Vop/mtlxstandard_surface)
+set _stage_materiallibrary1_materialx_mtlxstandard_surface = `run("opadd -e -n -v mtlxstandard_surface mtlxstandard_surface")`
+oplocate -x `$arg2 + -6.0116820000000004` -y `$arg3 + 16.902996999999999` $_stage_materiallibrary1_materialx_mtlxstandard_surface
+opparm $_stage_materiallibrary1_materialx_mtlxstandard_surface folder0 ( 1 ) base_color ( 0 1 0 ) folder0_7 ( 1 )
+opset -d off -r off -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -L off -M off -H on -E off $_stage_materiallibrary1_materialx_mtlxstandard_surface
+opexprlanguage -s hscript $_stage_materiallibrary1_materialx_mtlxstandard_surface
+opuserdata -n '___Version___' -v '' $_stage_materiallibrary1_materialx_mtlxstandard_surface
+opuserdata -n '___toolcount___' -v '6' $_stage_materiallibrary1_materialx_mtlxstandard_surface
+opuserdata -n '___toolid___' -v 'collect_matx_shaders' $_stage_materiallibrary1_materialx_mtlxstandard_surface
+opuserdata -n '__inputgroup_' -v 'collapsed' $_stage_materiallibrary1_materialx_mtlxstandard_surface
+opuserdata -n '__inputgroup_Coat' -v 'collapsed' $_stage_materiallibrary1_materialx_mtlxstandard_surface
+opuserdata -n '__inputgroup_Emission' -v 'collapsed' $_stage_materiallibrary1_materialx_mtlxstandard_surface
+opuserdata -n '__inputgroup_Sheen' -v 'collapsed' $_stage_materiallibrary1_materialx_mtlxstandard_surface
+opuserdata -n '__inputgroup_Specular' -v 'collapsed' $_stage_materiallibrary1_materialx_mtlxstandard_surface
+opuserdata -n '__inputgroup_Subsurface' -v 'collapsed' $_stage_materiallibrary1_materialx_mtlxstandard_surface
+opuserdata -n '__inputgroup_Thin Film' -v 'collapsed' $_stage_materiallibrary1_materialx_mtlxstandard_surface
+opuserdata -n '__inputgroup_Transmission' -v 'collapsed' $_stage_materiallibrary1_materialx_mtlxstandard_surface
+
+# Node $_stage_materiallibrary1_materialx_mtlxdisplacement (Vop/mtlxdisplacement)
+set _stage_materiallibrary1_materialx_mtlxdisplacement = `run("opadd -e -n -v mtlxdisplacement mtlxdisplacement")`
+oplocate -x `$arg2 + -6.0066260000000007` -y `$arg3 + 12.851997000000001` $_stage_materiallibrary1_materialx_mtlxdisplacement
+opset -d off -r off -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -L off -M off -H on -E off $_stage_materiallibrary1_materialx_mtlxdisplacement
+opexprlanguage -s hscript $_stage_materiallibrary1_materialx_mtlxdisplacement
+opuserdata -n '___Version___' -v '' $_stage_materiallibrary1_materialx_mtlxdisplacement
+opuserdata -n '___toolcount___' -v '6' $_stage_materiallibrary1_materialx_mtlxdisplacement
+opuserdata -n '___toolid___' -v 'collect_matx_shaders' $_stage_materiallibrary1_materialx_mtlxdisplacement
+
+# Node $_stage_materiallibrary1_materialx_Material_Outputs_and_AOVs (Vop/suboutput)
+set _stage_materiallibrary1_materialx_Material_Outputs_and_AOVs = `run("opadd -e -n -v suboutput Material_Outputs_and_AOVs")`
+oplocate -x `$arg2 + -2.3536390000000003` -y `$arg3 + 12.851997000000001` $_stage_materiallibrary1_materialx_Material_Outputs_and_AOVs
+opparm -V 21.0.440 $_stage_materiallibrary1_materialx_Material_Outputs_and_AOVs name1 ( surface ) name2 ( displacement )
+opset -d off -r off -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -L off -M off -H on -E off $_stage_materiallibrary1_materialx_Material_Outputs_and_AOVs
+opexprlanguage -s hscript $_stage_materiallibrary1_materialx_Material_Outputs_and_AOVs
+opuserdata -n '___Version___' -v '21.0.440' $_stage_materiallibrary1_materialx_Material_Outputs_and_AOVs
+opuserdata -n '___toolcount___' -v '6' $_stage_materiallibrary1_materialx_Material_Outputs_and_AOVs
+opuserdata -n '___toolid___' -v 'collect_matx_shaders' $_stage_materiallibrary1_materialx_Material_Outputs_and_AOVs
+
+# Node $_stage_materiallibrary1_materialx_material_properties (Vop/kma_material_properties)
+set _stage_materiallibrary1_materialx_material_properties = `run("opadd -e -n -v kma_material_properties material_properties")`
+oplocate -x `$arg2 + -6.0066260000000007` -y `$arg3 + 11.413267000000001` $_stage_materiallibrary1_materialx_material_properties
+opset -d off -r off -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -L off -M off -H on -E off $_stage_materiallibrary1_materialx_material_properties
+opexprlanguage -s hscript $_stage_materiallibrary1_materialx_material_properties
+opuserdata -n '___Version___' -v '' $_stage_materiallibrary1_materialx_material_properties
+opuserdata -n '___toolcount___' -v '6' $_stage_materiallibrary1_materialx_material_properties
+opuserdata -n '___toolid___' -v 'collect_matx_shaders' $_stage_materiallibrary1_materialx_material_properties
+
+# Node $_stage_materiallibrary1_materialx_base_color (Vop/mtlximage)
+set _stage_materiallibrary1_materialx_base_color = `run("opadd -e -n -v mtlximage base_color")`
+oplocate -x `$arg2 + -12.078488999999999` -y `$arg3 + 16.902996999999999` $_stage_materiallibrary1_materialx_base_color
+opparm $_stage_materiallibrary1_materialx_base_color signature ( color3 ) file ( '`chs("../../shader/texture_folder")``chs("../../shader/model_name")`_`chs("../../shader/texture_name")`_BaseColor_ACES - ACEScg.<UDIM>.exr' ) filtertype ( cubic )
+opset -d off -r off -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -L off -M off -H on -E off $_stage_materiallibrary1_materialx_base_color
+opexprlanguage -s hscript $_stage_materiallibrary1_materialx_base_color
+opuserdata -n '___Version___' -v '' $_stage_materiallibrary1_materialx_base_color
+opuserdata -n '___toolcount___' -v '6' $_stage_materiallibrary1_materialx_base_color
+opuserdata -n '___toolid___' -v 'collect_matx_shaders' $_stage_materiallibrary1_materialx_base_color
+
+# Node $_stage_materiallibrary1_materialx_metallic (Vop/mtlximage)
+set _stage_materiallibrary1_materialx_metallic = `run("opadd -e -n -v mtlximage metallic")`
+oplocate -x `$arg2 + -12.078488999999999` -y `$arg3 + 14.431997000000001` $_stage_materiallibrary1_materialx_metallic
+opparm $_stage_materiallibrary1_materialx_metallic file ( '`chs("../../shader/texture_folder")``chs("../../shader/model_name")`_`chs("../../shader/texture_name")`_Metallic_Raw.<UDIM>.exr' ) filtertype ( cubic )
+opset -d off -r off -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -L off -M off -H on -E off $_stage_materiallibrary1_materialx_metallic
+opexprlanguage -s hscript $_stage_materiallibrary1_materialx_metallic
+opuserdata -n '___Version___' -v '' $_stage_materiallibrary1_materialx_metallic
+opuserdata -n '___toolcount___' -v '6' $_stage_materiallibrary1_materialx_metallic
+opuserdata -n '___toolid___' -v 'collect_matx_shaders' $_stage_materiallibrary1_materialx_metallic
+
+# Node $_stage_materiallibrary1_materialx_roughness (Vop/mtlximage)
+set _stage_materiallibrary1_materialx_roughness = `run("opadd -e -n -v mtlximage roughness")`
+oplocate -x `$arg2 + -12.078488999999999` -y `$arg3 + 11.862897` $_stage_materiallibrary1_materialx_roughness
+opparm $_stage_materiallibrary1_materialx_roughness file ( '`chs("../../shader/texture_folder")``chs("../../shader/model_name")`_`chs("../../shader/texture_name")`_Roughness_Raw.<UDIM>.exr' ) filtertype ( cubic )
+opset -d off -r off -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -L off -M off -H on -E off $_stage_materiallibrary1_materialx_roughness
+opexprlanguage -s hscript $_stage_materiallibrary1_materialx_roughness
+opuserdata -n '___Version___' -v '' $_stage_materiallibrary1_materialx_roughness
+opuserdata -n '___toolcount___' -v '6' $_stage_materiallibrary1_materialx_roughness
+opuserdata -n '___toolid___' -v 'collect_matx_shaders' $_stage_materiallibrary1_materialx_roughness
+
+# Node $_stage_materiallibrary1_materialx_normal (Vop/mtlximage)
+set _stage_materiallibrary1_materialx_normal = `run("opadd -e -n -v mtlximage normal")`
+oplocate -x `$arg2 + -12.078488999999999` -y `$arg3 + 6.1866296714563296` $_stage_materiallibrary1_materialx_normal
+opparm $_stage_materiallibrary1_materialx_normal signature ( color3 ) file ( '`chs("../../shader/texture_folder")``chs("../../shader/model_name")`_`chs("../../shader/texture_name")`_Normal_Raw.<UDIM>.exr' ) filtertype ( cubic )
+opset -d off -r off -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -L off -M off -H on -E off $_stage_materiallibrary1_materialx_normal
+opexprlanguage -s hscript $_stage_materiallibrary1_materialx_normal
+opuserdata -n '___Version___' -v '' $_stage_materiallibrary1_materialx_normal
+opuserdata -n '___toolcount___' -v '6' $_stage_materiallibrary1_materialx_normal
+opuserdata -n '___toolid___' -v 'collect_matx_shaders' $_stage_materiallibrary1_materialx_normal
+
+# Node $_stage_materiallibrary1_materialx_mtlxnormalmap1 (Vop/mtlxnormalmap::2.0)
+set _stage_materiallibrary1_materialx_mtlxnormalmap1 = `run("opadd -e -n -v mtlxnormalmap::2.0 mtlxnormalmap1")`
+oplocate -x `$arg2 + -9.0942318244094267` -y `$arg3 + 6.1866296714563296` $_stage_materiallibrary1_materialx_mtlxnormalmap1
+opset -d off -r off -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -L off -M off -H on -E off $_stage_materiallibrary1_materialx_mtlxnormalmap1
+opexprlanguage -s hscript $_stage_materiallibrary1_materialx_mtlxnormalmap1
+opuserdata -n '___Version___' -v '' $_stage_materiallibrary1_materialx_mtlxnormalmap1
+opuserdata -n '___toolcount___' -v '6' $_stage_materiallibrary1_materialx_mtlxnormalmap1
+opuserdata -n '___toolid___' -v 'collect_matx_shaders' $_stage_materiallibrary1_materialx_mtlxnormalmap1
+
+# Node $_stage_materiallibrary1_materialx_height (Vop/mtlximage)
+set _stage_materiallibrary1_materialx_height = `run("opadd -e -n -v mtlximage height")`
+oplocate -x `$arg2 + -12.078488999999999` -y `$arg3 + 9.1284590190287211` $_stage_materiallibrary1_materialx_height
+opparm $_stage_materiallibrary1_materialx_height file ( '`chs("../../shader/texture_folder")``chs("../../shader/model_name")`_`chs("../../shader/texture_name")`_Height_Raw.<UDIM>.exr' ) filtertype ( cubic )
+opset -d off -r off -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -L off -M off -H on -E off $_stage_materiallibrary1_materialx_height
+opexprlanguage -s hscript $_stage_materiallibrary1_materialx_height
+opuserdata -n '___Version___' -v '' $_stage_materiallibrary1_materialx_height
+opuserdata -n '___toolcount___' -v '6' $_stage_materiallibrary1_materialx_height
+opuserdata -n '___toolid___' -v 'collect_matx_shaders' $_stage_materiallibrary1_materialx_height
+
+# Node $_stage_materiallibrary1_materialx_emission (Vop/mtlximage)
+set _stage_materiallibrary1_materialx_emission = `run("opadd -e -n -v mtlximage emission")`
+oplocate -x `$arg2 + -12.078488999999999` -y `$arg3 + 3.5055378764214096` $_stage_materiallibrary1_materialx_emission
+opparm $_stage_materiallibrary1_materialx_emission file ( '`chs("../../shader/texture_folder")``chs("../../shader/model_name")`_`chs("../../shader/texture_name")`_Emissive_ACES - ACEScg.$F4.exr' ) filtertype ( cubic )
+opset -d off -r off -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -L off -M off -H on -E off $_stage_materiallibrary1_materialx_emission
+opexprlanguage -s hscript $_stage_materiallibrary1_materialx_emission
+opuserdata -n '___Version___' -v '' $_stage_materiallibrary1_materialx_emission
+opuserdata -n '___toolcount___' -v '6' $_stage_materiallibrary1_materialx_emission
+opuserdata -n '___toolid___' -v 'collect_matx_shaders' $_stage_materiallibrary1_materialx_emission
+opcf ..
+opcf $_stage_materiallibrary1_materialx
+oporder -e inputs mtlxstandard_surface mtlxdisplacement Material_Outputs_and_AOVs material_properties base_color metallic roughness normal mtlxnormalmap1 height emission 
+opcf ..
+opset -p on $_stage_materiallibrary1_materialx
+
+opcf $arg1
+opwire -n $_stage_materiallibrary1_materialx -0 $_stage_materiallibrary1_shader
+opcf $arg1
+opcf $_stage_materiallibrary1_materialx
+opwire -n $_stage_materiallibrary1_materialx_base_color -1 $_stage_materiallibrary1_materialx_mtlxstandard_surface
+opwire -n $_stage_materiallibrary1_materialx_metallic -3 $_stage_materiallibrary1_materialx_mtlxstandard_surface
+opwire -n $_stage_materiallibrary1_materialx_roughness -6 $_stage_materiallibrary1_materialx_mtlxstandard_surface
+opwire -n $_stage_materiallibrary1_materialx_mtlxnormalmap1 -40 $_stage_materiallibrary1_materialx_mtlxstandard_surface
+opwire -n $_stage_materiallibrary1_materialx_mtlxstandard_surface -0 $_stage_materiallibrary1_materialx_Material_Outputs_and_AOVs
+opwire -n $_stage_materiallibrary1_materialx_mtlxdisplacement -1 $_stage_materiallibrary1_materialx_Material_Outputs_and_AOVs
+opwire -n $_stage_materiallibrary1_materialx_material_properties -2 $_stage_materiallibrary1_materialx_Material_Outputs_and_AOVs
+opwire -n $_stage_materiallibrary1_materialx_normal -0 $_stage_materiallibrary1_materialx_mtlxnormalmap1
+opcf ..
+
+set oidx = 0
+if ($argc >= 9 && "$arg9" != "") then
+    set oidx = $arg9
+endif
+
+if ($argc >= 5 && "$arg4" != "") then
+    set output = $_stage_materiallibrary1_materialx
+    opwire -n $output -$arg5 $arg4
+endif
+if ($argc >= 6 && "$arg6" != "") then
+    set input = $_stage_materiallibrary1_shader
+    if ($arg8) then
+        opwire -n -i $arg6 -0 $input
+    else
+        opwire -n -o $oidx $arg6 -0 $input
+    endif
+endif
+opcf $saved_path
+'''
+hou.hscript(h_preamble + h_extra_args + h_cmd)
+]]></script>
+  </tool>
+
+  <tool name="customize_variant_name" label="Customize Variant Name" icon="LOP_storeparametervalues">
+    <helpURL>operator:Lop/storeparametervalues</helpURL>
+    <toolMenuContext name="network">
+      <contextOpType>Lop/storeparametervalues</contextOpType>
+    </toolMenuContext>
+    <script scriptType="python"><![CDATA[
+import sys
+import toolutils
+
+outputitem = None
+inputindex = -1
+inputitem = None
+outputindex = -1
+
+num_args = 1
+h_extra_args = ''
+pane = toolutils.activePane(kwargs)
+if not isinstance(pane, hou.NetworkEditor):
+    pane = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor)
+    if pane is None:
+       hou.ui.displayMessage(
+               'Cannot create node: cannot find any network pane')
+       sys.exit(0)
+else: # We're creating this tool from the TAB menu inside a network editor
+    pane_node = pane.pwd()
+    if "outputnodename" in kwargs and "inputindex" in kwargs:
+        outputitem = pane_node.item(kwargs["outputnodename"])
+        inputindex = kwargs["inputindex"]
+        h_extra_args += 'set arg4 = "' + kwargs["outputnodename"] + '"\n'
+        h_extra_args += 'set arg5 = "' + str(inputindex) + '"\n'
+        num_args = 6
+    if "inputnodename" in kwargs and "outputindex" in kwargs:
+        inputitem = pane_node.item(kwargs["inputnodename"])
+        outputindex = kwargs["outputindex"]
+        h_extra_args += 'set arg6 = "' + kwargs["inputnodename"] + '"\n'
+        h_extra_args += 'set arg9 = "' + str(outputindex) + '"\n'
+        num_args = 9
+    if "autoplace" in kwargs:
+        autoplace = kwargs["autoplace"]
+    else:
+        autoplace = False
+    # If shift-clicked we want to auto append to the current
+    # node
+    if "shiftclick" in kwargs and kwargs["shiftclick"]:
+        if inputitem is None:
+            inputitem = pane.currentNode()
+            outputindex = 0
+    if "nodepositionx" in kwargs and             "nodepositiony" in kwargs:
+        try:
+            pos = [ float( kwargs["nodepositionx"] ),
+                    float( kwargs["nodepositiony"] )]
+        except:
+            pos = None
+    else:
+        pos = None
+
+    if not autoplace and not pane.listMode():
+        if pos is not None:
+            pass
+        elif outputitem is None:
+            pos = pane.selectPosition(inputitem, outputindex, None, -1)
+        else:
+            pos = pane.selectPosition(inputitem, outputindex,
+                                      outputitem, inputindex)
+
+    if pos is not None:
+        if "node_bbox" in kwargs:
+            size = kwargs["node_bbox"]
+            pos[0] -= size[0] / 2
+            pos[1] -= size[1] / 2
+        else:
+            pos[0] -= 0.573625
+            pos[1] -= 0.220625
+        h_extra_args += 'set arg2 = "' + str(pos[0]) + '"\n'
+        h_extra_args += 'set arg3 = "' + str(pos[1]) + '"\n'
+h_extra_args += 'set argc = "' + str(num_args) + '"\n'
+
+pane_node = pane.pwd()
+child_type = pane_node.childTypeCategory().nodeTypes()
+
+if 'storeparametervalues' not in child_type:
+   hou.ui.displayMessage(
+           'Cannot create node: incompatible pane network type')
+   sys.exit(0)
+
+# First clear the node selection
+pane_node.setSelected(False, True)
+
+h_path = pane_node.path()
+h_preamble = 'set arg1 = "' + h_path + '"\n'
+h_cmd = r'''
+if ($argc < 2 || "$arg2" == "") then
+   set arg2 = 0
+endif
+if ($argc < 3 || "$arg3" == "") then
+   set arg3 = 0
+endif
+# Automatically generated script
+# $arg1 - the path to add this node
+# $arg2 - x position of the tile
+# $arg3 - y position of the tile
+# $arg4 - input node to wire to
+# $arg5 - which input to wire to
+# $arg6 - output node to wire to
+# $arg7 - the type of this node
+# $arg8 - the node is an indirect input
+# $arg9 - index of output from $arg6
+
+\set noalias = 1
+set saved_path = `execute("oppwf")`
+opcf $arg1
+
+# Node $_stage_component_parms (Lop/storeparametervalues)
+set _stage_component_parms = `run("opadd -e -n -v storeparametervalues component_parms")`
+oplocate -x `$arg2 + 0` -y `$arg3 + 0` $_stage_component_parms
+opparm $_stage_component_parms  parameters ( 1 )
+opparm $_stage_component_parms parameters ( 1 ) name1 ( component:geo:variantname ) valuestring1 ( no_landing_gear )
+opset -d off -r off -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -D off $_stage_component_parms
+opexprlanguage -s hscript $_stage_component_parms
+opuserdata -n '___Version___' -v '' $_stage_component_parms
+opset -p on $_stage_component_parms
+
+opcf $arg1
+opwire -n $_stage_prune1 -0 $_stage_component_parms
+
+set oidx = 0
+if ($argc >= 9 && "$arg9" != "") then
+    set oidx = $arg9
+endif
+
+if ($argc >= 5 && "$arg4" != "") then
+    set output = $_stage_component_parms
+    opwire -n $output -$arg5 $arg4
+endif
+if ($argc >= 6 && "$arg6" != "") then
+    set input = $_stage_component_parms
+    if ($arg8) then
+        opwire -n -i $arg6 -0 $input
+    else
+        opwire -n -o $oidx $arg6 -0 $input
+    endif
+endif
+opcf $saved_path
+'''
+hou.hscript(h_preamble + h_extra_args + h_cmd)
+]]></script>
+  </tool>
+
+  <tool name="component_material_custom" label="Componetn Material Custom" icon="hicon:/SVGIcons.index?LOP_componentmaterial.svg">
+    <helpURL>operator:Lop/subnet</helpURL>
+    <toolMenuContext name="network">
+      <contextOpType>Lop/subnet</contextOpType>
+    </toolMenuContext>
+    <script scriptType="python"><![CDATA[
+import sys
+import toolutils
+
+outputitem = None
+inputindex = -1
+inputitem = None
+outputindex = -1
+
+num_args = 1
+h_extra_args = ''
+pane = toolutils.activePane(kwargs)
+if not isinstance(pane, hou.NetworkEditor):
+    pane = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor)
+    if pane is None:
+       hou.ui.displayMessage(
+               'Cannot create node: cannot find any network pane')
+       sys.exit(0)
+else: # We're creating this tool from the TAB menu inside a network editor
+    pane_node = pane.pwd()
+    if "outputnodename" in kwargs and "inputindex" in kwargs:
+        outputitem = pane_node.item(kwargs["outputnodename"])
+        inputindex = kwargs["inputindex"]
+        h_extra_args += 'set arg4 = "' + kwargs["outputnodename"] + '"\n'
+        h_extra_args += 'set arg5 = "' + str(inputindex) + '"\n'
+        num_args = 6
+    if "inputnodename" in kwargs and "outputindex" in kwargs:
+        inputitem = pane_node.item(kwargs["inputnodename"])
+        outputindex = kwargs["outputindex"]
+        h_extra_args += 'set arg6 = "' + kwargs["inputnodename"] + '"\n'
+        h_extra_args += 'set arg9 = "' + str(outputindex) + '"\n'
+        num_args = 9
+    if "autoplace" in kwargs:
+        autoplace = kwargs["autoplace"]
+    else:
+        autoplace = False
+    # If shift-clicked we want to auto append to the current
+    # node
+    if "shiftclick" in kwargs and kwargs["shiftclick"]:
+        if inputitem is None:
+            inputitem = pane.currentNode()
+            outputindex = 0
+    if "nodepositionx" in kwargs and             "nodepositiony" in kwargs:
+        try:
+            pos = [ float( kwargs["nodepositionx"] ),
+                    float( kwargs["nodepositiony"] )]
+        except:
+            pos = None
+    else:
+        pos = None
+
+    if not autoplace and not pane.listMode():
+        if pos is not None:
+            pass
+        elif outputitem is None:
+            pos = pane.selectPosition(inputitem, outputindex, None, -1)
+        else:
+            pos = pane.selectPosition(inputitem, outputindex,
+                                      outputitem, inputindex)
+
+    if pos is not None:
+        if "node_bbox" in kwargs:
+            size = kwargs["node_bbox"]
+            pos[0] -= size[0] / 2
+            pos[1] -= size[1] / 2
+        else:
+            pos[0] -= 0.573625
+            pos[1] -= 0.220625
+        h_extra_args += 'set arg2 = "' + str(pos[0]) + '"\n'
+        h_extra_args += 'set arg3 = "' + str(pos[1]) + '"\n'
+h_extra_args += 'set argc = "' + str(num_args) + '"\n'
+
+pane_node = pane.pwd()
+child_type = pane_node.childTypeCategory().nodeTypes()
+
+if 'subnet' not in child_type:
+   hou.ui.displayMessage(
+           'Cannot create node: incompatible pane network type')
+   sys.exit(0)
+
+# First clear the node selection
+pane_node.setSelected(False, True)
+
+h_path = pane_node.path()
+h_preamble = 'set arg1 = "' + h_path + '"\n'
+h_cmd = r'''
+if ($argc < 2 || "$arg2" == "") then
+   set arg2 = 0
+endif
+if ($argc < 3 || "$arg3" == "") then
+   set arg3 = 0
+endif
+# Automatically generated script
+# $arg1 - the path to add this node
+# $arg2 - x position of the tile
+# $arg3 - y position of the tile
+# $arg4 - input node to wire to
+# $arg5 - which input to wire to
+# $arg6 - output node to wire to
+# $arg7 - the type of this node
+# $arg8 - the node is an indirect input
+# $arg9 - index of output from $arg6
+
+\set noalias = 1
+set saved_path = `execute("oppwf")`
+opcf $arg1
+
+# Node $_stage_component_material_custom (Lop/subnet)
+set _stage_component_material_custom = `run("opadd -e -n -v subnet component_material_custom")`
+oplocate -x `$arg2 + 0` -y `$arg3 + 0` $_stage_component_material_custom
+opspareds '    parm {         name    "variantset"         label   "Variant Set"         type    string         default { "mtl" }         parmtag { "autoscope" "0000000000000000" }         parmtag { "script_callback_language" "python" }     }     parm {         name    "variantname"         label   "Variant Name Default"         type    string         default { "$OS" }         menureplace {             [ "opmenu -l -a variantblock_end1 variantname" ]         }         parmtag { "autoscope" "0000000000000000" }         parmtag { "script_callback_language" "python" }     }     parm {         name    "sepparm"         label   "Separator"         type    separator         default { "" }     }     parm {         name    "primpattern1"         label   "Primitives"         type    string         default { "%type:Mesh" }         menutoggle {             [ "opmenu -l -a assign_material_2k primpattern1" ]         }         parmtag { "autoscope" "0000000000000000" }         parmtag { "script_action" "import loputils\\nloputils.selectPrimsInParm(kwargs, True, allowinstanceproxies=True)" }         parmtag { "script_action_help" "Select primitives in the Scene Viewer or Scene Graph Tree pane.\\nCtrl-click to select using the primitive picker dialog.\\nShift-click to select using the primitive pattern editor.\\nAlt-click to toggle movement of the display flag." }         parmtag { "script_action_icon" "BUTTONS_reselect" }         parmtag { "sidefx::usdpathtype" "primlist" }     }     parm {         name    "matspecvexpr1"         label   "Vexpression"         type    string         default { "chs(\\"asset_path\\")+\\"/\\"+@primname;" }         parmtag { "autoscope" "0000000000000000" }         parmtag { "editor" "1" }         parmtag { "editorlang" "vex" }         parmtag { "editorlines" "5-20" }     }     parm {         name    "bindpurpose1"         label   "Purpose"         type    string         default { "full" }         menu {             [ "opmenu -l -a assign_material_2k bindpurpose1" ]         }         parmtag { "autoscope" "0000000000000000" }         parmtag { "script_callback_language" "python" }     }     parm {         name    "bindstrength1"         label   "Strength"         type    ordinal         default { "fallback" }         menu {             "fallback"  "Default"             "strong"    "Stronger than Descendants"             "weak"      "Weaker than Descendants"         }         parmtag { "autoscope" "0000000000000000" }         parmtag { "script_callback_language" "python" }     } ' $_stage_component_material_custom
+opparm -V 21.0.440 $_stage_component_material_custom variantname ( '$OS' )
+opset -d off -r off -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -D off $_stage_component_material_custom
+opexprlanguage -s hscript $_stage_component_material_custom
+opuserdata -n '___Version___' -v '21.0.440' $_stage_component_material_custom
+opcf $_stage_component_material_custom
+
+# Node $_stage_component_material_custom_assign_material_4k (Lop/assignmaterial)
+set _stage_component_material_custom_assign_material_4k = `run("opadd -e -n -v assignmaterial assign_material_4k")`
+oplocate -x `$arg2 + -1.8826000000000001` -y `$arg3 + 1.6933` $_stage_component_material_custom_assign_material_4k
+opspareds '    parm {         name    "asset_path"         label   "Asset Path"         type    string         default { "" }         parmtag { "script_callback_language" "python" }     }     multiparm {         name    "nummaterials"         label    "Number of Materials"         baseparm         default 1         parmtag { "multistartoffset" "1" }          parm {             name    "enable#"             baseparm             label   "Enable"             joinnext             export  none         }         parm {             name    "primpattern#"             baseparm             label   "Primitives"             export  none         }         parm {             name    "ispathexpression#"             baseparm             label   "Pattern Is USD Path Expression"             export  none         }         parm {             name    "matspecmethod#"             baseparm             label   "Specify Material Using"             export  none         }         parm {             name    "matspecpath#"             baseparm             label   "Material Path"             export  none         }         parm {             name    "matspeccvex#"             baseparm             label   "CVEX Node"             export  none         }         parm {             name    "matspecvexpr#"             baseparm             label   "Vexpression"             export  none         }         parm {             name    "parmsovermethod#"             baseparm             label   "Parameters Override"             export  none         }         parm {             name    "parmsovercvex#"             baseparm             label   "Override CVEX Node"             export  none         }         parm {             name    "parmsovervexpr#"             baseparm             label   "Override Vexpression"             export  none         }         parm {             name    "parmsoverexports#"             baseparm             label   "VEX Bindings to Export"             export  none         }         parm {             name    "matparentpath#"             baseparm             label   "Materials Parent Path"             export  none         }         parm {             name    "matparenttype#"             baseparm             label   "Materials Parent Type"             export  none         }         groupcollapsible {             name    "cvexbindingsfolder#"             label   "CVEX Bindings"             baseparm             hidewhen "{ matspecmethod# != cvex matspecmethod# != vexpr parmsovermethod# != cvex parmsovermethod# != vexpr }"              parm {                 name    "cvexautobind#"                 baseparm                 label   "Autobind by Name"                 export  none             }             multiparm {                 name    "cvexbindings#"                 label    "Number of Bindings"                 baseparm                 default 0                 parmtag { "multistartoffset" "1" }                  parm {                     name    "cvexbinding#_attrib#"                     baseparm                     label   "Attribute Name"                     export  none                 }                 parm {                     name    "cvexbinding#_parm#"                     baseparm                     label   "VEX Parameter"                     export  none                 }             }          }          groupcollapsible {             name    "matbindingfolder#"             label   "Material Binding"             baseparm              parm {                 name    "geosubset#"                 baseparm                 label   "Create and Bind Geometry Subsets"                 export  none             }             parm {                 name    "bindpurpose#"                 baseparm                 label   "Purpose"                 export  none             }             parm {                 name    "bindstrength#"                 baseparm                 label   "Strength"                 export  none             }             parm {                 name    "bindmethod#"                 baseparm                 label   "Method"                 export  none             }             parm {                 name    "bindcollectionexpand#"                 baseparm                 label   "Include Descendant Primitives in Collection"                 export  none             }             parm {                 name    "bindpath#"                 baseparm                 label   "Path"                 export  none             }             parm {                 name    "bindname#"                 baseparm                 label   "Name"                 export  none             }         }      }  ' $_stage_component_material_custom_assign_material_4k
+opparm $_stage_component_material_custom_assign_material_4k  nummaterials ( 1 ) cvexbindings1 ( 0 )
+chblockbegin
+chadd -t 0 0 $_stage_component_material_custom_assign_material_4k primpattern1
+chkey -t 0 -v 0 -m 0 -a 0 -A 0 -T a  -F 'chs("../primpattern1")' $_stage_component_material_custom_assign_material_4k/primpattern1
+chadd -t 0 0 $_stage_component_material_custom_assign_material_4k matspecvexpr1
+chkey -t 0 -v 0 -m 0 -a 0 -A 0 -T a  -F 'chs("../matspecvexpr1")' $_stage_component_material_custom_assign_material_4k/matspecvexpr1
+chadd -t 0 0 $_stage_component_material_custom_assign_material_4k bindpurpose1
+chkey -t 0 -v 0 -m 0 -a 0 -A 0 -T a  -F 'chs("../bindpurpose1")' $_stage_component_material_custom_assign_material_4k/bindpurpose1
+chadd -t 0 0 $_stage_component_material_custom_assign_material_4k bindstrength1
+chkey -t 0 -v 0 -m 0 -a 0 -A 0 -T a  -F 'ch("../bindstrength1")' $_stage_component_material_custom_assign_material_4k/bindstrength1
+chblockend
+opparm -V 21.0.440 $_stage_component_material_custom_assign_material_4k primpattern1 ( primpattern1 ) matspecmethod1 ( vexpr ) matspecvexpr1 ( matspecvexpr1 ) matbindingfolder1 ( 1 ) bindpurpose1 ( bindpurpose1 ) bindstrength1 ( bindstrength1 ) asset_path ( '`chs("../reference2/primpath")`' )
+opset -d off -r off -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -D off $_stage_component_material_custom_assign_material_4k
+opexprlanguage -s hscript $_stage_component_material_custom_assign_material_4k
+opuserdata -n '___Version___' -v '21.0.440' $_stage_component_material_custom_assign_material_4k
+opcf ..
+opcf $_stage_component_material_custom
+
+# Node $_stage_component_material_custom_reference2 (Lop/reference::2.0)
+set _stage_component_material_custom_reference2 = `run("opadd -e -n -v reference::2.0 reference2")`
+oplocate -x `$arg2 + -1.8826000000000001` -y `$arg3 + 2.8228` $_stage_component_material_custom_reference2
+opparm $_stage_component_material_custom_reference2  num_files ( 0 )
+opparm -V 21.0.440 $_stage_component_material_custom_reference2 input_group ( 1 ) primpath ( /ASSET/mtl ) refprim ( "" ) refprimpath ( /ASSET/mtl ) files_group ( 1 ) num_files ( 0 )
+opset -d off -r off -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -D off $_stage_component_material_custom_reference2
+opexprlanguage -s hscript $_stage_component_material_custom_reference2
+opuserdata -n '___Version___' -v '21.0.440' $_stage_component_material_custom_reference2
+
+# Node $_stage_component_material_custom_variantblock_end1 (Lop/addvariant)
+set _stage_component_material_custom_variantblock_end1 = `run("opadd -e -n -v addvariant variantblock_end1")`
+oplocate -x `$arg2 + -2.93032` -y `$arg3 + -2.3309000000000002` $_stage_component_material_custom_variantblock_end1
+chblockbegin
+chadd -t 0 0 $_stage_component_material_custom_variantblock_end1 variantset
+chkey -t 0 -v 0 -m 0 -a 0 -A 0 -T a  -F 'chs("../variantset")' $_stage_component_material_custom_variantblock_end1/variantset
+chadd -t 0 0 $_stage_component_material_custom_variantblock_end1 variantname
+chkey -t 0 -v 0 -m 0 -a 0 -A 0 -T a  -F 'chs("../variantname")' $_stage_component_material_custom_variantblock_end1/variantname
+chblockend
+opparm -V 21.0.440 $_stage_component_material_custom_variantblock_end1 primpath ( /ASSET ) createoptionsblock ( on ) variantset ( variantset ) variantprimpath ( '`ifs(ch("sourceprim"), chs("sourceprimpath"), chs("primpath"))`' ) variantname ( variantname )
+opset -d off -r off -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -D off $_stage_component_material_custom_variantblock_end1
+opexprlanguage -s hscript $_stage_component_material_custom_variantblock_end1
+opuserdata -n '___Version___' -v '21.0.440' $_stage_component_material_custom_variantblock_end1
+
+# Node $_stage_component_material_custom_variantblock_begin1 (Lop/begincontextoptionsblock)
+set _stage_component_material_custom_variantblock_begin1 = `run("opadd -e -n -v begincontextoptionsblock variantblock_begin1")`
+oplocate -x `$arg2 + -3.09206` -y `$arg3 + 5.2146999999999997` $_stage_component_material_custom_variantblock_begin1
+opparm -V 21.0.440 $_stage_component_material_custom_variantblock_begin1 layerbreak ( on )
+opcolor -c 0.64899998903274536 0.56999999284744263 0.87000000476837158 $_stage_component_material_custom_variantblock_begin1
+opset -d off -r on -h off -f off -y off -t off -l off -s off -u off -F off -c on -e on -b off -D off $_stage_component_material_custom_variantblock_begin1
+opexprlanguage -s hscript $_stage_component_material_custom_variantblock_begin1
+opuserdata -n '___Version___' -v '21.0.440' $_stage_component_material_custom_variantblock_begin1
+
+# Node $_stage_component_material_custom_4K (Lop/null)
+set _stage_component_material_custom_4K = `run("opadd -e -n -v null 4K")`
+oplocate -x `$arg2 + -2.12778` -y `$arg3 + 0.59060000000000001` $_stage_component_material_custom_4K
+opset -d on -r off -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -D off $_stage_component_material_custom_4K
+opexprlanguage -s hscript $_stage_component_material_custom_4K
+opuserdata -n '___Version___' -v '21.0.440' $_stage_component_material_custom_4K
+
+# Node $_stage_component_material_custom_mtl_var01 (Lop/configurelayer)
+set _stage_component_material_custom_mtl_var01 = `run("opadd -e -n -v configurelayer mtl_var01")`
+oplocate -x `$arg2 + -1.1179699999999999` -y `$arg3 + 3.8228` $_stage_component_material_custom_mtl_var01
+opparm $_stage_component_material_custom_mtl_var01  customdatacount ( 0 ) stagevariablescount ( 0 )
+chblockbegin
+chadd -t 0 0 $_stage_component_material_custom_mtl_var01 starttime
+chkey -t 0 -v 1 -m 0 -a 0 -A 0 -T a  -F '$FSTART' $_stage_component_material_custom_mtl_var01/starttime
+chadd -t 0 0 $_stage_component_material_custom_mtl_var01 endtime
+chkey -t 0 -v 240 -m 0 -a 0 -A 0 -T a  -F '$FEND' $_stage_component_material_custom_mtl_var01/endtime
+chadd -t 0 0 $_stage_component_material_custom_mtl_var01 timepersecond
+chkey -t 0 -v 24 -m 0 -a 0 -A 0 -T a  -F '$FPS' $_stage_component_material_custom_mtl_var01/timepersecond
+chadd -t 0 0 $_stage_component_material_custom_mtl_var01 framespersecond
+chkey -t 0 -v 24 -m 0 -a 0 -A 0 -T a  -F '$FPS' $_stage_component_material_custom_mtl_var01/framespersecond
+chblockend
+opparm -V 21.0.440 $_stage_component_material_custom_mtl_var01 setsavepath ( on ) savepath ( './data/`$HIPNAME`/mtl_`chs("../variantname")`.usd' )
+opset -d off -r off -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -D off $_stage_component_material_custom_mtl_var01
+opexprlanguage -s hscript $_stage_component_material_custom_mtl_var01
+opuserdata -n '___Version___' -v '21.0.440' $_stage_component_material_custom_mtl_var01
+
+# Node $_stage_component_material_custom_setvariant1 (Lop/setvariant)
+set _stage_component_material_custom_setvariant1 = `run("opadd -e -n -v setvariant setvariant1")`
+oplocate -x `$arg2 + -2.82681` -y `$arg3 + -3.44495` $_stage_component_material_custom_setvariant1
+opparm $_stage_component_material_custom_setvariant1  num_variants ( 1 )
+opparm -V 21.0.440 $_stage_component_material_custom_setvariant1 variantset1 ( '`chs("../variantblock_end1/variantset")`' ) variantname1 ( '`chs("../variantblock_end1/variantname")`' )
+opset -d off -r off -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -D off $_stage_component_material_custom_setvariant1
+opexprlanguage -s hscript $_stage_component_material_custom_setvariant1
+opuserdata -n '___Version___' -v '21.0.440' $_stage_component_material_custom_setvariant1
+
+# Node $_stage_component_material_custom_output0 (Lop/output)
+set _stage_component_material_custom_output0 = `run("opadd -e -n -v output output0")`
+oplocate -x `$arg2 + -2.82681` -y `$arg3 + -4.1159400000000002` $_stage_component_material_custom_output0
+opset -d off -r off -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -D off $_stage_component_material_custom_output0
+opexprlanguage -s hscript $_stage_component_material_custom_output0
+opuserdata -n '___Version___' -v '21.0.440' $_stage_component_material_custom_output0
+oporder -e assign_material_4k reference2 variantblock_end1 variantblock_begin1 4K mtl_var01 setvariant1 output0 
+opcf ..
+opset -p on $_stage_component_material_custom
+
+opcf $arg1
+opwire -n $_stage_component_render_settings -0 $_stage_component_material_custom
+opwire -n $_stage_material_4k -1 $_stage_component_material_custom
+opcf $_stage_component_material_custom
+opwire -n $_stage_component_material_custom_reference2 -0 $_stage_component_material_custom_assign_material_4k
+opwire -n $_stage_component_material_custom_variantblock_begin1 -0 $_stage_component_material_custom_reference2
+opwire -n $_stage_component_material_custom_mtl_var01 -1 $_stage_component_material_custom_reference2
+opwire -n -i 0 -0 $_stage_component_material_custom_variantblock_end1
+opwire -n $_stage_component_material_custom_4K -1 $_stage_component_material_custom_variantblock_end1
+opwire -n $_stage_component_material_custom_variantblock_begin1 -2 $_stage_component_material_custom_variantblock_end1
+opwire -n -i 0 -0 $_stage_component_material_custom_variantblock_begin1
+opwire -n $_stage_component_material_custom_assign_material_4k -0 $_stage_component_material_custom_4K
+opwire -n -i 1 -0 $_stage_component_material_custom_mtl_var01
+opwire -n $_stage_component_material_custom_variantblock_end1 -0 $_stage_component_material_custom_setvariant1
+opwire -n $_stage_component_material_custom_setvariant1 -0 $_stage_component_material_custom_output0
+opcf ..
+
+set oidx = 0
+if ($argc >= 9 && "$arg9" != "") then
+    set oidx = $arg9
+endif
+
+if ($argc >= 5 && "$arg4" != "") then
+    set output = $_stage_component_material_custom
+    opwire -n $output -$arg5 $arg4
+endif
+if ($argc >= 6 && "$arg6" != "") then
+    set input = $_stage_component_material_custom
+    if ($arg8) then
+        opwire -n -i $arg6 -0 $input
+    else
+        opwire -n -o $oidx $arg6 -0 $input
+    endif
+endif
+opcf $saved_path
+'''
+hou.hscript(h_preamble + h_extra_args + h_cmd)
+]]></script>
+  </tool>
+
+  <tool name="asset_builder_template" label="Asset Builder Template" icon="hicon:/SVGIcons.index?BUTTONS_addasset.svg">
+    <script scriptType="python"><![CDATA[import hou
+import os
+
+path = hou.expandString("$CUSTOM_TOOLS/templates/Asset_Builder_Template.hiplc")
+pattern = "*component* *material* *domelight*"
+
+if not os.path.isfile(path):
+    hou.ui.displayMessage(
+        f"Template not found:\n{path}\n\nCheck that CUSTOM_TOOLS points at your custom_tools folder.",
+        severity=hou.severityType.Error,
+        title="Asset Builder Template",
+    )
+else:
+    try:
+        hou.hipFile.merge(path, pattern, False, True)
+    except Exception as exc:
+        hou.ui.displayMessage(
+            f"Failed to merge Asset Builder Template:\n{exc}",
+            severity=hou.severityType.Error,
+            title="Asset Builder Template",
+        )]]></script>
+  </tool>
+
+  <tool name="merges_nodes_from_file" label="Merge Nodes From HIP FILE" icon="hicon:/SVGIcons.index?COP2_file.svg">
+    <script scriptType="python"><![CDATA[from tools import merge_nodes_from_hipfile
+
+merge_nodes_from_hipfile.show_merge_dialog()]]></script>
+  </tool>
+
+  <tool name="show_node_inputs" label="Show Node Inputs" icon="hicon:/SVGIcons.index?VOP_hasinput.svg">
+    <script scriptType="python"><![CDATA[from tools import reveal_node_inputs_and_names
+
+reveal_node_inputs_and_names.show_node_inputs()]]></script>
+  </tool>
+
+  <tool name="node_batch_setter" label="Node Batch Setter" icon="hicon:/SVGIcons.index?DATATYPES_node_list.svg">
+    <script scriptType="python"><![CDATA[from tools import node_batch_setter
+
+
+win = node_batch_setter.NodeBatchSetterUI()
+win.show()]]></script>
+  </tool>
+
+  <tool name="texture_from_disk" label="Texture From Disk" icon="hicon:/SVGIcons.index?SHELF_temperature_from_texture.svg">
+    <script scriptType="python"><![CDATA[from tools import texture_from_disk as TFD
+
+TFD.texture_from_disk()
+
+]]></script>
+  </tool>
+
+  <tool name="get_node_code" label="Get Node Code" icon="hicon:/SVGIcons.index?LOP_editpropertiesfromnode.svg">
+    <script scriptType="python"><![CDATA[from tools import get_node_code
+
+get_node_code.export_node_as_code()
+]]></script>
+  </tool>
+
+  <tool name="houdini_mcp" label="Houdini MCP" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[from HMCP.shelf_tool import toggle_mcp_server
+toggle_mcp_server()
+]]></script>
+  </tool>
+
+  <tool name="HMCP" label="HMCP" icon="hicon:/SVGIcons.index?MISC_server.svg">
+    <script scriptType="python"><![CDATA[from HMCP.shelf_tool import toggle_mcp_server
+toggle_mcp_server()
+]]></script>
+  </tool>
+
+  <tool name="FORCESTART" label="FORCESTART" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[from HMCP.force_restart import force_restart_server
+force_restart_server()]]></script>
+  </tool>
+
+  <tool name="convert_to_mtlx_usd" label="Convert To MTLX &amp; USD" icon="hicon:/SVGIcons.index?COMMON_houdinimaterialx.svg">
+    <script scriptType="python"><![CDATA[from tools.material_tools.TexToMtlx_USD.tex_to_mtlx_standalone import show_standalone_converter
+show_standalone_converter()]]></script>
+  </tool>
+
+  <tool name="batch_asset_builder" label="Batch Asset Builder" icon="hicon:/SVGIcons.index?MISC_asset_browser.svg">
+    <script scriptType="python"><![CDATA[from tools.lops_asset_builder_v3 import batch_asset_builder
+batch_asset_builder.show_batch_asset_builder()
+]]></script>
+  </tool>
+
+  <tool name="select_all_node_of_same_type" label="Select All Nodes Of The Same Type" icon="hicon:/SVGIcons.index?DATATYPES_node_list.svg">
+    <script scriptType="python"><![CDATA[from tools.select_same_type_simple import select_same_type
+select_same_type()
+]]></script>
+  </tool>
+</shelfDocument>

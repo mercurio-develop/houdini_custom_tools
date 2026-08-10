@@ -1,11 +1,60 @@
-.idea/*
+# IDE
+.idea/
+.vscode/
+*.iml
 
-# Python bytecode
+# Python
 __pycache__/
 *.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+.python-version
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
 
-# Test files - ignore all test files to avoid pushing them
-test_*.py
-**/test_*.py
-*/test_*.py
-*test*.py
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor swap files
+*.swp
+*.swo
+
+# Logs and temp
+logs/
+*.log
+cache/
+tmp/
+
+# Local secrets (copy from *.example.json)
+config/integrations.json
+config/projects_config.json
+.env
+.env.*
+.envrc
+
+# Machine-specific MCP config (use .cursor/mcp.json.example)
+.cursor/mcp.json
+
+# JLTools decompiled archive — proprietary; do not publish
+scripts/python/tools/jltools_decompiled/
+
+# Vendored / third-party (install separately)
+ftrack-connect-houdini-*/
+
+# Accidental pip artifacts
+scripts/python/=
+
+# HMCP local venv only (source is tracked)
+scripts/python/HMCP/.venv/
+
+# Documentation session notes
+scripts/python/docs/
+
+# Node (dashboard)
+node_modules/
