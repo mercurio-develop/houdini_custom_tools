@@ -56,8 +56,10 @@ docs/
 integrations.json
 config/integrations.json
 
-# JLTools decompiled archive — personal learning only; proprietary (Jorge Lega)
+# JLTools — proprietary (Jorge Lega); never publish decompiled/reverse-engineered material
 tools/jltools_decompiled/
+tools/jltools_*
+tools/JLTOOLS*
 
 # Optional vendored wheels for Houdini
 vendor/

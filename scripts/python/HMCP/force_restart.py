@@ -157,7 +157,7 @@ def force_restart_server():
     print("✓ SERVER RESTART COMPLETE!")
     print("=" * 80)
     print("\nServer is running on localhost:9876")
-    print("You can now use the MCP bridge to connect from Claude Code.")
+    print("You can now connect your MCP agent (e.g. Cursor) via the bridge.")
 
     return server
 

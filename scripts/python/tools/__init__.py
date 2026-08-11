@@ -1,1 +1,1 @@
-"""Custom Houdini pipeline tools (LOPS builders, KB3D, project utilities)."""
+"""Custom Houdini pipeline tools (LOPS builders, project utilities, shelf tools)."""

@@ -26,6 +26,12 @@ DOC_RESOURCES = {
         "relative_path": "scripts/python/tools/psx_tools/psx_config.py",
         "mime": "text/x-python",
     },
+    "hmcp://docs/agents": {
+        "name": "Agent Context (compressed)",
+        "description": "Compressed agent context for HMCP workflows",
+        "relative_path": "docs/mempalace.md",
+        "mime": "text/markdown",
+    },
 }
 
 WORKFLOW_PROMPTS = {
@@ -77,7 +83,7 @@ Report errors, warnings, and the upstream chain clearly.""",
     },
     "publish-prep-workflow": {
         "name": "Publish Prep Workflow",
-        "description": "Collect output paths and validate materials before production-hub publish",
+        "description": "Collect output paths and validate materials before delivery",
         "text": """Prepare a LOPs Asset Builder result for publish via HMCP.
 
 1. get_stage_summary — find componentoutput node
@@ -85,7 +91,7 @@ Report errors, warnings, and the upstream chain clearly.""",
 3. list_material_assignments — confirm materials bound on stage
 4. cook_node on component output
 5. export_usd_from_lop if disk file needed
-6. production-hub MCP — publish_usd_deliverable_tool with paths from step 2
+6. validate_usd_file on exported paths
 
 Use scan_to_lops_config before building if starting from a raw asset folder.""",
     },
@@ -114,18 +120,18 @@ Prefer typed USD tools over execute_code for stage inspection.""",
     },
     "solaris-publish-workflow": {
         "name": "Solaris Publish Workflow",
-        "description": "Karma render, USD export, version-up, and re-import chain",
-        "text": """Publish a Solaris asset using HMCP publish tools (original pipeline helpers).
+        "description": "Karma render, USD export, and validation for publish prep",
+        "text": """Publish a Solaris asset using HMCP publish tools.
 
-1. setup_karma_usd_publish_chain — wire input LOP through Karma → USD ROP → Sublayer/Reference
-2. render_karma_preview on the Karma node output path
-3. cook_node on USD ROP
-4. version_up_usd_output when iterating (_v001 → _v002)
-5. get_build_output_paths for deliverable paths
-6. validate_usd_file on exported disk USD
+1. get_stage_summary — find componentoutput node
+2. get_build_output_paths — read deliverable disk paths
+3. render_karma_preview on the cooked LOP output
+4. export_usd_from_lop — write cooked stage to disk if needed
+5. validate_usd_file on exported paths
+6. analyze_usd_materials — confirm material/texture manifest
 
-For materials from external USD: analyze_usd_materials first, then import_usd_materials if needed.
-For USDZ packages: extract_usdz_archive before validate or material analysis.""",
+For variant deliverables: use variant-export-workflow instead.
+See docs/HMCP_TOOLS.md for the canonical tool list.""",
     },
     "variant-export-workflow": {
         "name": "Variant Export Workflow",
@@ -137,7 +143,7 @@ For USDZ packages: extract_usdz_archive before validate or material analysis."""
 3. compare_material_manifests — folder textures vs USD extraction
 4. batch_export_variants — write geo×mtl USD files + manifest JSON
 5. validate_usd_file on each export (or sample)
-6. get_variant_manifest — read manifest for production-hub publish
+6. get_variant_manifest — read manifest for delivery tracking
 
 Use repair_texture_paths if analyze_usd_materials shows missing textures.""",
     },

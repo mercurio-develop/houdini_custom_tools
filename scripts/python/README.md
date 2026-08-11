@@ -146,24 +146,21 @@ cd scripts/python && PYTHONPATH=. python -c "from integrations.settings import l
 ```
 python/
 ├── ARCHITECTURE.md
-├── integrations/
-├── mcp/
+├── CONVENTIONS.md
+├── SHELF_SCOPE.md
 ├── pipeline/
-├── projects/production_hub/
 ├── tools/
-│   ├── production_hub/
 │   ├── lops_asset_builder_v3/    # Flagship asset builder
-│   ├── kb3d_tools/               # USD library + bgeo/ + core/
-│   ├── asset_library_builder/    # Canonical build_from_parts
+│   ├── psx_tools/                # PSX retro preprocessing
 │   ├── material_tools/
 │   ├── batch_import_workflow/
-│   ├── _archive/                 # Superseded LOPS builders
 │   └── lop_network_organizer.py, merge_selected_lops.py, …
 ├── modules/
-└── utils/
+├── HMCP/                         # Cursor MCP bridge + handlers
+└── custom_utils.py
 ```
 
-Legacy LOPS builders (v1, v2, workflow UI) live under `tools/_archive/lops_builders/`.
+Agent docs at repo root: `AGENTS.md`, `docs/HMCP_TOOLS.md`.
 
 ---
 
@@ -171,13 +168,13 @@ Legacy LOPS builders (v1, v2, workflow UI) live under `tools/_archive/lops_build
 
 | Theme | Where to look |
 |-------|----------------|
-| Asset management & batch pipelines | `lops_asset_builder_cli.py`, `asset_library_builder`, `kb3d_tools/bgeo` |
-| PySide / artist tools | `batch_asset_builder.py`, `project_manager.py`, `production_hub`, `kb3d_proper_assembly_builder_ui.py` |
-| Tracking / MAM bridge | `integrations/`, `tools/production_hub/` |
-| Extensible design | `AssetBuilderConfig`, JSON examples, modular `kb3d_usd_builder` classes |
-| Artist support | `material_validator.py`, `lop_network_organizer`, progress reporters in UIs |
+| Asset management & batch pipelines | `lops_asset_builder_cli.py`, `batch_asset_builder.py` |
+| PySide / artist tools | `batch_asset_builder.py`, `project_manager.py` |
+| Agent / MCP integration | `HMCP/`, `docs/HMCP_TOOLS.md`, `AGENTS.md` |
+| Extensible design | `AssetBuilderConfig`, JSON examples |
+| Artist support | `material_validator.py`, `lop_network_organizer`, progress reporters |
 
-**Stack:** Python 3.11, PySide6, USD (`pxr`) where noted, Houdini `hou`; optional `httpx` + `ftrack-python-api` for Production Hub.
+**Stack:** Python 3.11, PySide6, USD (`pxr`) where noted, Houdini `hou`.
 
 **Smoke test (inside Houdini):** Run `show_batch_asset_builder()`, build one asset from `examples/simple_config.json`, then `organize_current_stage()` on the result.
 
@@ -185,18 +182,19 @@ Legacy LOPS builders (v1, v2, workflow UI) live under `tools/_archive/lops_build
 
 ## Cursor AI setup
 
-Agent skills and rules for this pipeline live in the repo:
+Agent entry: [`AGENTS.md`](../../AGENTS.md) at repo root.
 
 | Resource | Path |
 |----------|------|
+| Agent mandates | `$CUSTOM_TOOLS/AGENTS.md` |
+| Tool reference | `$CUSTOM_TOOLS/docs/HMCP_TOOLS.md` |
 | Skills | `$CUSTOM_TOOLS/.cursor/skills/` |
-| Rules | `$CUSTOM_TOOLS/.cursor/rules/houdini-python-tools.mdc` |
-| HMCP (live Houdini) | `scripts/python/HMCP/CURSOR_SETUP.md` |
-| HMCP dev playbook | `scripts/python/HMCP/PIPELINE_DEV.md` |
+| Rules | `$CUSTOM_TOOLS/.cursor/rules/` |
+| HMCP setup | `scripts/python/HMCP/CURSOR_SETUP.md` |
+| Edit-test playbook | `scripts/python/HMCP/PIPELINE_DEV.md` |
 | MCP config template | `$CUSTOM_TOOLS/.cursor/mcp.json.example` |
-| MCP config (local) | `$CUSTOM_TOOLS/.cursor/mcp.json` |
 
-Skills cover: pipeline overview, LOPs Asset Builder v3, PSX retro tools, shelf tools, HMCP workflow.
+Skills: `hmcp-cursor-workflow`, `hmcp-edit-test-loop`, `lops-asset-builder`, `psx-retro-tools`, `houdini-pipeline-overview`.
 
 Open the Python workspace in Cursor: `cursor $CUSTOM_TOOLS/scripts/python`
 

@@ -22,7 +22,7 @@ def toggle_mcp_server():
         if server and server.is_running:
             hou.ui.displayMessage(
                 "Houdini MCP Server started on port 9876\n\n"
-                "You can now connect Claude Code to Houdini!",
+                "Connect your MCP agent (e.g. Cursor) via the bridge.",
                 severity=hou.severityType.Message,
                 title="MCP Server"
             )

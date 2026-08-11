@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
 
 import hou
 
@@ -48,31 +47,4 @@ def run_batch_lops_build(params: dict) -> dict:
         "total": len(summaries),
         "success_count": success_count,
         "results": summaries,
-    }
-
-
-def build_library_from_parts(params: dict) -> dict:
-    from tools.asset_library_builder.asset_builder import build_from_parts
-
-    parts_folder = hou.text.expandString(params.get("parts_folder", ""))
-    asset_name = params.get("asset_name", "")
-    models_folder = hou.text.expandString(params.get("models_folder", ""))
-    materials_folder = hou.text.expandString(params.get("materials_folder", ""))
-    texture_variants = params.get("texture_variants")
-
-    if not parts_folder or not asset_name or not models_folder or not materials_folder:
-        raise ValueError("parts_folder, asset_name, models_folder, materials_folder are required")
-
-    payload_path = build_from_parts(
-        parts_folder=parts_folder,
-        asset_name=asset_name,
-        models_folder=models_folder,
-        materials_folder=materials_folder,
-        texture_variants=texture_variants,
-    )
-    return {
-        "status": "success",
-        "asset_name": asset_name,
-        "payload_usd": payload_path,
-        "exists": os.path.isfile(payload_path),
     }

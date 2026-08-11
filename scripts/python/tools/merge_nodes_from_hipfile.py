@@ -41,11 +41,10 @@ class MergeHipDialog(QtWidgets.QDialog):
         outer.addLayout(btn_row)
 
         # --- sensible default ---
-        default_dir = "/home/tushita/houdini21.0/custom_tools/templates"
-        if os.path.isdir(default_dir):
-            self.path_edit.setText(default_dir)
-
-        # --- signals (UniqueConnection avoids duplicates on reloads) ---
+        default_dir = hou.expandString("$CUSTOM_TOOLS/templates")
+        if not os.path.isdir(default_dir):
+            default_dir = hou.expandString("$HIP")
+        self.path_edit.setText(default_dir)
         self.browse_btn.clicked.connect(self._on_browse, QtCore.Qt.UniqueConnection)
         self.merge_btn.clicked.connect(self._on_merge, QtCore.Qt.UniqueConnection)
         self.close_btn.clicked.connect(self.close, QtCore.Qt.UniqueConnection)

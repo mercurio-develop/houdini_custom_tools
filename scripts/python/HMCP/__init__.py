@@ -1,7 +1,7 @@
 """
-Houdini MCP Server Plugin - Integration for Claude Code via Model Context Protocol
+Houdini MCP Server Plugin — live Houdini control for MCP agents (Cursor, etc.)
 
-This plugin enables Claude to interact with Houdini through MCP, allowing:
+Enables an AI agent to interact with Houdini through MCP:
 - Scene inspection and node creation
 - Python code execution within Houdini
 - Rendering and asset management
@@ -34,14 +34,17 @@ def start_server():
         print("Houdini MCP Server is already running")
         return hou.session.houdini_mcp_server
 
-    # Import and create server
-    from HMCP.server import HoudiniMCPServer
+    # Import latest server code (pick up edits without restarting Houdini)
+    import importlib
+    import HMCP.server as server_module
+    importlib.reload(server_module)
+    HoudiniMCPServer = server_module.HoudiniMCPServer
 
     server = HoudiniMCPServer()
     hou.session.houdini_mcp_server = server
     _server_instance = server
 
-    print("Houdini MCP Server started successfully on port 9876")
+    print("Houdini MCP Server started on port 9876 — connect your MCP agent via the bridge.")
     return server
 
 

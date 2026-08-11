@@ -17,7 +17,7 @@ $ python config_helper.py
 
 STEP 3: CURSOR MCP CONFIG
 ───────────────────────────────────────────────────────────────────────────────
-Project config: scripts/.cursor/mcp.json (already in repo)
+Project config: copy .cursor/mcp.json.example → .cursor/mcp.json (repo root)
 
 Or paste config_helper.py output into ~/.cursor/mcp.json
 

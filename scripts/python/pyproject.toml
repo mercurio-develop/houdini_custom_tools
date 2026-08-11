@@ -13,8 +13,6 @@ exclude = [
     "HMCP/.venv",
     "tools/jltools_decompiled",
     "tools/_archive",
-    "tools/lops_asset_builder_v3/componentoutput_custom.py",
-    "tools/lops_asset_builder_v3/subnet_lookdev_setup.py",
     "**/__pycache__",
 ]
 

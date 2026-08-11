@@ -4,7 +4,6 @@
     "tests",
     "testing",
     "dev",
-    "_archive",
     "ui",
     ".venv",
     "venv",
@@ -14,14 +13,10 @@
     "dist-packages"
   ],
   "reload_exclude_paths": [
-    "tools/kb3d_tools/examples",
-    "tools/examples",
     "tools/lops_asset_builder_v3/examples",
     "tools/lops_asset_builder_v3/tests",
-    "tools/_archive",
     "utils/dev",
-    "utils/testing",
-    "tools/asset_library_builder/test_kb3d.py"
+    "utils/testing"
   ],
   "reload_exclude_modules": [
     "custom_utils",

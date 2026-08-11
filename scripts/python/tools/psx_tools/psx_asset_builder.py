@@ -8,7 +8,7 @@ import hou
 
 from tools.lops_asset_builder_v3.asset_builder_config import AssetBuilderConfig
 from tools.lops_asset_builder_v3.asset_builder_engine import run_asset_build
-from tools.lops_asset_builder_v3.asset_builder_progress import ProgressReporter
+from tools.lops_asset_builder_v3.asset_builder_ui import ProgressReporter
 from tools.psx_tools.karma_presets import apply_psx_karma_settings
 from tools.psx_tools.psx_config import PSXBuildConfig
 from tools.psx_tools.psx_sop_pipeline import patch_geo_import_with_psx

@@ -1,92 +1,74 @@
-# Code conventions — `scripts/python`
+# Custom Tools — Conventions
 
-Shared rules for layout, naming, and where new code belongs.
+Coding standards for `scripts/python/`. Cursor rule: [`.cursor/rules/houdini-python-tools.mdc`](../../.cursor/rules/houdini-python-tools.mdc). HMCP handlers: [`.cursor/rules/hmcp-handlers.mdc`](../../.cursor/rules/hmcp-handlers.mdc).
 
-## Directory roles
+---
 
-| Path | Purpose | Runs in Houdini? |
-|------|---------|------------------|
-| `tools/<product>/` | End-user features (UI, CLI, builders) | Yes |
-| `modules/` | Reusable helpers (no shelf entry) | Usually yes |
-| `integrations/` | ftrack, Iconik, headless HTTP | No `hou` |
-| `HMCP/` | MCP TCP server + bridge | Server in Houdini |
-| `pipeline/` | Project/save/USD project tools | Yes |
-| `utils/` | Dev scripts, one-offs | Varies |
+## Structure
 
-**Rule:** If two products need it, move it to `modules/` or `integrations/`.
+- Tool logic lives under `tools/<package>/`, not in shelf XML.
+- Shared helpers go in `modules/`, not duplicated across tools or handlers.
+- Config uses `@dataclass` (see `AssetBuilderConfig`, `PSXAssetConfig`).
+- Long builds use `ProgressLike` / `ProgressReporter`; log via `progress.log()`.
+- Node names: use `_sanitize()` from `modules.misc_utils`.
+- Prefer extending existing products over parallel builders (see `ARCHITECTURE.md`).
 
-## Naming
-
-| Item | Convention | Example |
-|------|------------|---------|
-| Packages / folders | `snake_case` | `lops_asset_builder_v3` |
-| Python modules | `snake_case.py` | `material_validator.py` |
-| Classes | `PascalCase` | `AssetBuilderConfig` |
-| Functions | `snake_case` | `run_asset_build` |
-| HMCP TCP commands | `snake_case` | `batch_export_variants` |
-| MCP tool names | same as TCP command | 1:1 with `handler_registry` |
-| Config JSON keys | `snake_case` | `folder_textures` |
-| Houdini node names | sanitized, no spaces | `_sanitize()` from `misc_utils` |
-
-## HMCP handler pattern
-
-1. **Logic** in `HMCP/handlers/<domain>/<module>.py` — thin wrappers only when possible.
-2. **Shared logic** in `modules/` (e.g. `usd_solaris_utils`, `lop_helpers`).
-3. **Register** in the subpackage `__init__.py` `COMMANDS` dict (merged by `handler_registry.py`).
-4. **Schema** in `HMCP/mcp_tool_catalog.py` (bridge picks up automatically).
-5. **Never** duplicate LOPs Asset Builder logic — call `tools/lops_asset_builder_v3/*`.
-
-Handler signature: `def tool_name(params: dict) -> dict`
-
-Handlers must raise `ValueError` for bad input; server wraps other exceptions.
-
-## Product boundaries
-
-- **Build USD out:** `tools/lops_asset_builder_v3/`, `tools/psx_tools/`
-- **Library on disk:** `tools/asset_library_builder/`, `tools/kb3d_tools/`
-- **Publish / track:** `integrations/`, `tools/production_hub/`
-- **USD inspect/import:** `modules/usd_solaris_utils.py`, `modules/usd_material_naming.py`
-- **Agent API:** `HMCP/handlers/*`
-
-Do not add a second asset builder. Extend v3 or add HMCP handlers.
+---
 
 ## Imports
 
-Prefer absolute imports from package root (`tools.`, `modules.`, `HMCP.`):
-
 ```python
-from modules.lop_helpers import find_component_output
-from tools.lops_asset_builder_v3.lops_asset_builder_cli import build_asset
+from tools.lops_asset_builder_v3.asset_builder_config import AssetBuilderConfig
+from modules.houdini_node_utils import set_parm
+from modules.misc_utils import _sanitize
 ```
 
-Avoid handler-to-handler imports; use `modules/` instead.
+- Do not import `hou`-dependent UI at module level without guards.
+- HMCP handlers import from `tools/` and `modules/` — never duplicate logic inline.
 
-## USD / texture channel keys
+---
 
-Use the shared vocabulary in `modules/usd_solaris_utils.TEXTURE_CHANNEL_ALIASES`:
+## Houdini runtime
 
-`base_color`, `metallic`, `roughness`, `normal`, `specular`, `opacity`, `displacement`, `emission`
+- Avoid side effects at import time (no node creation, no UI on import).
+- Guard UI entry points: check selection/context; use `hou.ui.displayMessage` for errors.
+- After editing Python in a live session: `custom_utils.reload_packages({"altclick": True})` or HMCP `reload_custom_tools`.
+- HMCP package is excluded from auto-reload — always call `reload_custom_tools` explicitly after handler edits.
 
-Validators, importers, and repair tools should use the same keys.
+---
 
-## Documentation
+## Shelf sync
 
-| Doc | When to update |
-|-----|----------------|
-| `ARCHITECTURE.md` | New product or major seam |
-| `CONVENTIONS.md` | Naming or layout rules change |
-| `HMCP/README.md` | New MCP tools |
-| `HMCP/handlers/README.md` | New handler module |
-| `.cursor/skills/*` | Agent workflow changes |
+- Every new shelf tool must call a function in `tools/`, not inline logic in `custom_tools.shelf`.
+- Use `importlib.reload(module)` in shelf scripts for dev iteration.
+- Document new shelf tools in `SHELF_SCOPE.md`.
 
-## Gitignore
+---
 
-- `tools/jltools_decompiled/` — local learning only
-- `integrations.json`, `.env*` — secrets
-- `docs/` — session notes (optional)
+## HMCP handlers
+
+1. Signature: `def my_tool(params: dict) -> dict`
+2. Validate params early; return structured dicts (not bare strings).
+3. Register in subpackage `COMMANDS` dict (see `HMCP/handlers/README.md`).
+4. Add JSON schema to `HMCP/mcp_tool_catalog.py`.
+5. Document in `HMCP/HMCP_SCOPE.md` and `docs/HMCP_TOOLS.md`.
+6. Shared logic stays in `modules/` or `tools/` — handlers are thin wrappers.
+
+---
 
 ## Testing
 
-- HMCP: `HMCP/smoke_test_tcp.py` via hython (server running)
-- Headless: `python3 -m py_compile` on modules without `hou`
-- No `hou` in `integrations/` CI paths
+| Layer | Method |
+|-------|--------|
+| Hou-free modules | `python3 -m py_compile path/to/module.py` |
+| Dither/texture utils | Direct import of pure modules (no `hou`) |
+| HMCP TCP | `hython HMCP/smoke_test_tcp.py` (server running) |
+| Live session | HMCP tools via Cursor after `reload_custom_tools` |
+
+---
+
+## Scope and diffs
+
+- Minimal diffs; match surrounding naming and patterns.
+- Archive superseded tools to `tools/_archive/` with a short README.
+- One HMCP tool = one pipeline action — see `HMCP/HMCP_SCOPE.md`.

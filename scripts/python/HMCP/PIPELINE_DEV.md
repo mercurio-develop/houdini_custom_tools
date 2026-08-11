@@ -6,7 +6,7 @@ Guide for humans and Cursor agents developing Houdini custom_tools with HMCP.
 
 1. Houdini 22 with `$CUSTOM_TOOLS` package loaded
 2. HMCP server running (shelf **HMCP** toggle)
-3. Cursor MCP green for `houdini` (and optionally `production-hub`)
+3. Cursor MCP green for `houdini`
 4. Workspace: `$CUSTOM_TOOLS/scripts/python`
 
 ## Standard edit-test loop
@@ -35,7 +35,6 @@ Target: under 60 seconds from save to verified build.
 | Cook LOP output | `cook_node` | Returns prim count |
 | Tidy network | `organize_lop_network` | Grid layout + merge outputs |
 | Ad-hoc Python | `execute_code` | Use `return_expr` for values |
-| ftrack / publish | `production-hub` MCP | Separate server |
 
 ### Extended inspection and graph tools
 
@@ -51,7 +50,6 @@ Target: under 60 seconds from save to verified build.
 | Layout network | `layout_nodes` | parent_path or node_paths |
 | Node flags | `set_node_flags` | display/render/template/bypass |
 | Batch builds | `run_batch_lops_build` | JSON file or inline array |
-| KB3D assembly | `build_library_from_parts` | asset_library_builder |
 | Viewport QA | `capture_viewport` | Returns PNG image |
 | Render cook | `cook_render_node` | ROP output path |
 | Frame range | `set_frame_range` | Playbar start/end |
@@ -77,12 +75,10 @@ Target: under 60 seconds from save to verified build.
 | Reference in LOPs | `create_usd_reference_lop` | Wire USD file into /stage |
 | Export metadata | `set_default_prim` | Before publish |
 | File validation | `validate_usd_file` | pxr + optional usdchecker |
-| Publish stack | `setup_karma_usd_publish_chain` | Karma → ROP → sublayer/ref |
-| Version bump | `version_up_usd_output` | `_v001` → `_v002` convention |
+| Karma preview | `render_karma_preview` | Still render after build |
 | USD cameras | `extract_usd_cameras` | Stage cameras → LOP nodes |
-| USDZ unpack | `extract_usdz_archive` | Embedded texture access |
 | Material manifest | `analyze_usd_materials` | Bindings + texture map |
-| USD → MaterialX | `import_usd_materials` | Material library rebuild |
+| Variant export | `batch_export_variants` | geo × mtl USD matrix |
 
 ### MCP resources and prompts
 
@@ -154,15 +150,6 @@ Organize lop network
 }
 ```
 
-## Production Hub + Houdini flow
-
-1. `production-hub`: `ftrack_list_tasks` → pick task
-2. `houdini`: `run_lops_asset_builder` → build USD
-3. `houdini`: `execute_code` with `return_expr` to get output path
-4. `production-hub`: `publish_usd_deliverable_tool`
-
-Requires `integrations.json` configured — see `projects/production_hub/README.md`.
-
 ## Smoke tests
 
 **TCP (inside Houdini via hython):**
@@ -196,4 +183,4 @@ All handlers run on Houdini's main thread via `hou.ui.executeDeferred`.
 - Do not use `get_scene_info` without filters on large HIPs
 - Do not use `execute_code` for routine builds — use typed tools
 - Do not skip `reload_custom_tools` after Python edits
-- Do not merge Production Hub into HMCP — keep headless integrations separate
+- Do not add studio MAM/tracking tools to HMCP — keep integrations as separate services

@@ -12,9 +12,6 @@ import sys
 import io
 import os
 import base64
-import tempfile
-import zipfile
-import urllib.request
 from contextlib import redirect_stdout, redirect_stderr
 
 import hou
@@ -118,10 +115,6 @@ class HoudiniMCPServer:
             'get_node_info': self.handle_get_node_info,
             'execute_code': self.handle_execute_code,
             'set_material': self.handle_set_material,
-            'render_single_view': self.handle_render_single_view,
-            'render_quad_view': self.handle_render_quad_view,
-            'render_specific_camera': self.handle_render_specific_camera,
-            'import_opus_url': self.handle_import_opus_url,
             'scan_asset_folder': self.handle_scan_asset_folder,
             'run_lops_asset_builder': self.handle_run_lops_asset_builder,
             'run_psx_asset_build': self.handle_run_psx_asset_build,
@@ -154,7 +147,7 @@ class HoudiniMCPServer:
             self.server_socket.listen(1)
             self.is_running = True
 
-            print(f"Houdini MCP Server listening on {self.host}:{self.port}")
+            print(f"Houdini MCP Server listening on {self.host}:{self.port} (waiting for MCP agent)")
 
             # Start listening thread
             self.listen_thread = threading.Thread(target=self._accept_connections, daemon=True)
@@ -176,7 +169,7 @@ class HoudiniMCPServer:
         while self.is_running:
             try:
                 self.client_socket, addr = self.server_socket.accept()
-                print(f"Client connected from {addr}")
+                print(f"MCP agent connected from {addr}")
 
                 # Start receiving messages
                 self._receive_messages()
@@ -210,7 +203,7 @@ class HoudiniMCPServer:
         if self.client_socket:
             self.client_socket.close()
             self.client_socket = None
-            print("Client disconnected")
+            print("MCP agent disconnected")
 
     def _process_message(self, message):
         """
@@ -262,7 +255,17 @@ class HoudiniMCPServer:
             finally:
                 event.set()
 
-        hou.ui.executeDeferred(_execute)
+        deferred = getattr(getattr(hou, "ui", None), "executeDeferred", None)
+        if callable(deferred):
+            deferred(_execute)
+        else:
+            try:
+                import hdefereval
+
+                hdefereval.executeDeferred(_execute)
+            except ImportError:
+                QtCore.QTimer.singleShot(0, _execute)
+
         if not event.wait(timeout=self.command_timeout):
             raise TimeoutError(f"Command timed out after {self.command_timeout}s")
         if 'error' in result_holder:
@@ -581,90 +584,6 @@ class HoudiniMCPServer:
         return {
             'material_path': shader.path(),
             'assigned_to': geo_path
-        }
-
-    def handle_render_single_view(self, params):
-        """Render Karma preview (delegates to render_karma_preview handler)."""
-        from HMCP.handlers.render.karma import render_karma_preview
-
-        merged = dict(params)
-        merged.setdefault("create_if_missing", True)
-        if "resolution" not in merged:
-            rotation = params.get("rotation", 0)
-            res = params.get("resolution", [1024, 1024])
-            merged["resolution"] = res
-            merged.setdefault("frame", int(hou.frame()))
-        return render_karma_preview(merged)
-
-    def handle_render_quad_view(self, params):
-        """Render four orthographic/perspective Karma views."""
-        from HMCP.handlers.render.karma import render_karma_preview
-
-        lop_node_path = params.get("lop_node_path") or params.get("node_path")
-        views = params.get("views", ["perspective", "top", "front", "side"])
-        results = []
-        for view in views:
-            view_params = dict(params)
-            view_params["lop_node_path"] = lop_node_path
-            view_params["view_name"] = view
-            try:
-                results.append({"view": view, **render_karma_preview(view_params)})
-            except Exception as exc:
-                results.append({"view": view, "error": str(exc)})
-        return {"views": results, "count": len(results)}
-
-    def handle_render_specific_camera(self, params):
-        """Render from a named camera via Karma."""
-        from HMCP.handlers.render.karma import render_karma_preview
-
-        camera_path = params.get("camera_path") or params.get("camera")
-        if not camera_path:
-            raise ValueError("camera_path is required")
-
-        merged = dict(params)
-        merged.setdefault("create_if_missing", True)
-        merged["camera_path"] = camera_path
-        result = render_karma_preview(merged)
-        result["camera_path"] = camera_path
-        return result
-
-    def handle_import_opus_url(self, params):
-        """
-        Import a model from a URL (OPUS or other).
-
-        Args:
-            params (dict): Contains 'url' and optional import settings
-
-        Returns:
-            dict: Import status
-        """
-        url = params.get('url')
-        if not url:
-            raise ValueError("No URL provided")
-
-        # Download file
-        temp_dir = tempfile.mkdtemp()
-        zip_path = os.path.join(temp_dir, 'download.zip')
-
-        urllib.request.urlretrieve(url, zip_path)
-
-        # Extract if it's a zip
-        if zipfile.is_zipfile(zip_path):
-            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                zip_ref.extractall(temp_dir)
-
-        # Find importable files (usd, gltf, etc.)
-        imported_files = []
-        for root, dirs, files in os.walk(temp_dir):
-            for file in files:
-                if file.endswith(('.usd', '.usda', '.usdc', '.gltf', '.glb')):
-                    file_path = os.path.join(root, file)
-                    imported_files.append(file_path)
-
-        return {
-            'temp_dir': temp_dir,
-            'imported_files': imported_files,
-            'status': 'downloaded'
         }
 
     def handle_scan_asset_folder(self, params):

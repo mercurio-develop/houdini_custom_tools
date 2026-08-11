@@ -36,7 +36,7 @@ from tools.lops_asset_builder_v3 import lops_asset_builder_cli
 from tools.lops_asset_builder_v3.asset_builder_ui import SimpleProgressDialog
 from tools.lops_asset_builder_v3.texture_variant_detector import TextureVariantDetector
 from modules.houdini_node_utils import suppress_gc_during_cook
-from integrations.usd_discovery import (
+from modules.usd_discovery import (
     DEFAULT_USD_PRIMARY_PRIORITY,
     USD_ROLE_EXCLUDE_DEFAULT,
     USD_ROLE_FILES,

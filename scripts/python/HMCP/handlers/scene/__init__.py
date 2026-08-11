@@ -6,7 +6,6 @@ from HMCP.handlers.scene.inspection import (
     get_node_errors,
     get_parameter_schema,
 )
-
 COMMANDS = {
     "get_node_errors": get_node_errors,
     "get_cook_chain": get_cook_chain,

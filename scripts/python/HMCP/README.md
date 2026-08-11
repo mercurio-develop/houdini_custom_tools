@@ -1,18 +1,18 @@
 # Houdini MCP Server (HMCP)
 
-Model Context Protocol (MCP) server for integrating **Houdini 22.0** with **Cursor** (and Claude Code). Lets an AI agent inspect scenes, create nodes, execute Python, and run custom pipeline tools like LOPS Asset Builder.
+Model Context Protocol (MCP) server for integrating **Houdini 22.0** with **Cursor** and other MCP agents. Lets an AI agent inspect scenes, create nodes, execute Python, and run custom pipeline tools like LOPS Asset Builder.
 
 ## Overview
 
 Two components:
 
 1. **Houdini Server** (`server.py`) — runs inside Houdini, listens on `localhost:9876`
-2. **MCP Bridge** (`houdini_mcp_bridge.py`) — connects Cursor/Claude to Houdini via TCP
+2. **MCP Bridge** (`houdini_mcp_bridge.py`) — connects MCP agents to Houdini via TCP
 
 ## Architecture
 
 ```
-Cursor IDE (MCP Client)
+Cursor IDE (MCP agent)
     ↕ (stdio)
 MCP Bridge (houdini_mcp_bridge.py)
     ↕ (TCP socket on localhost:9876)
@@ -53,12 +53,7 @@ Project config template: `$CUSTOM_TOOLS/.cursor/mcp.json.example` (copy to `.cur
 
 Restart Cursor → **Settings → MCP** → confirm `houdini` is connected when the in-Houdini server is running.
 
-### Step 3 (alternative): Configure Claude Code
-
-Add the JSON from `config_helper.py` to Claude Code MCP settings:
-
-- Linux: `~/.config/claude-code/settings.json`
-- macOS: `~/Library/Application Support/Claude Code/settings.json`
+Other MCP-compatible agents can use the same JSON from `config_helper.py` in their MCP settings.
 
 ## Usage
 
@@ -109,31 +104,12 @@ except Exception as e:
 | `cook_node` | Cook node + prim count |
 | `organize_lop_network` | Layout/merge LOP network |
 | `reload_custom_tools` | Reload package + Python modules |
-| `import_url` | Download/import USD/GLTF from URL |
-| `render_single_view` | Render placeholder |
 
 ### Extended tools (HMCP/handlers/)
 
-| Tool | Description |
-|------|-------------|
-| `get_node_errors` | Cook node and return errors/warnings |
-| `get_cook_chain` | Upstream/downstream node chain |
-| `get_parameter_schema` | Parm names, types, values, menus |
-| `inspect_usd_prim` | Inspect a USD prim on a cooked LOP |
-| `list_usd_prims` | List prims under a root path |
-| `export_usd_from_lop` | Export cooked stage to USD file |
-| `connect_nodes` | Wire output → input |
-| `layout_nodes` | Auto-layout network nodes |
-| `set_node_flags` | Display/render/template/bypass/lock |
-| `run_batch_lops_build` | Batch LOPs Asset Builder from JSON |
-| `build_library_from_parts` | KB3D-style assembly from part folders |
-| `capture_viewport` | Scene Viewer screenshot (returns image) |
-| `cook_render_node` | Cook ROP/render node |
-| `set_frame_range` | Set playbar frame range |
-| `get_server_health` | Houdini version, HIP, port, selection |
-| `get_asset_builder_example` | Read example build JSON from repo |
+See **[HMCP_SCOPE.md](HMCP_SCOPE.md)** for the full supported tool list (~56 total: 15 core + 41 extended).
 
-### Pipeline QA and publish prep
+### Pipeline QA (highlights)
 
 | Tool | Description |
 |------|-------------|
@@ -162,20 +138,18 @@ except Exception as e:
 | `set_default_prim` | Set defaultPrim (session or Configure Layer) |
 | `validate_usd_file` | On-disk USD validation + usdchecker |
 
-### Solaris publish & USD import (original helpers)
+### Publish prep & variants
 
 | Tool | Description |
 |------|-------------|
-| `setup_karma_usd_publish_chain` | Karma → USD ROP → Sublayer/Reference |
-| `version_up_usd_output` | Bump `_v###` on USD output nodes |
 | `extract_usd_cameras` | USD cameras → Solaris camera LOPs |
-| `extract_usdz_archive` | Unpack USDZ for textures/USD |
 | `analyze_usd_materials` | Material/texture manifest (no graph) |
-| `import_usd_materials` | Material Library rebuild from USD |
 | `list_component_variants` | Geo/mtl variant sets on componentoutput |
 | `batch_export_variants` | Export geo×mtl USD matrix + manifest |
 | `repair_texture_paths` | Fix broken texture paths from folder search |
 | `compare_material_manifests` | Folder scan vs USD texture extraction |
+
+Removed experimental publish-chain tools — see **HMCP_SCOPE.md**.
 
 ### MCP resources and prompts
 
@@ -237,7 +211,7 @@ export PYTHONPATH="$CUSTOM_TOOLS/scripts/python:$PYTHONPATH"
 
 **Legacy / one-offs:** add `handle_*` in `server.py` and register in `self.commands`, then add `types.Tool` + `command_map` entry in `houdini_mcp_bridge.py`.
 
-Document in this README, `PIPELINE_DEV.md`, and the `hmcp-cursor-workflow` skill.
+Document in this README, `PIPELINE_DEV.md`, `docs/HMCP_TOOLS.md`, and the `hmcp-cursor-workflow` skill.
 
 Handlers that call `hou.*` run on Houdini's main thread via `hou.ui.executeDeferred`.
 
@@ -254,7 +228,7 @@ See **[PIPELINE_DEV.md](PIPELINE_DEV.md)** for the agent/human development playb
 - **Houdini**: 22.0+ (tested with 22.0.368)
 - **Python**: Houdini's bundled Python for server; 3.10+ for bridge via `uv`
 - **MCP**: 1.4.1+
-- **Clients**: Cursor, Claude Code
+- **Clients**: Cursor and any MCP-compatible agent
 
 ## Shelf tools
 

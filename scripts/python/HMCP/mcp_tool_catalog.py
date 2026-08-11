@@ -136,21 +136,6 @@ EXTENDED_TOOLS = {
             "required": [],
         },
     ),
-    "build_library_from_parts": (
-        "build_library_from_parts",
-        "Build KB3D-style USD assembly from part folders (asset_library_builder)",
-        {
-            "type": "object",
-            "properties": {
-                "parts_folder": {"type": "string"},
-                "asset_name": {"type": "string"},
-                "models_folder": {"type": "string"},
-                "materials_folder": {"type": "string"},
-                "texture_variants": {"type": "array", "items": {"type": "string"}},
-            },
-            "required": ["parts_folder", "asset_name", "models_folder", "materials_folder"],
-        },
-    ),
     "capture_viewport": (
         "capture_viewport",
         "Capture active Scene Viewer to PNG (returns base64 image)",
@@ -471,37 +456,6 @@ EXTENDED_TOOLS = {
             "required": ["usd_path"],
         },
     ),
-    "setup_karma_usd_publish_chain": (
-        "setup_karma_usd_publish_chain",
-        "Create Karma → USD ROP → Sublayer/Reference publish stack on /stage",
-        {
-            "type": "object",
-            "properties": {
-                "parent_path": {"type": "string", "default": "/stage"},
-                "input_node_path": {"type": "string"},
-                "name_prefix": {"type": "string", "default": "publish"},
-                "import_mode": {"type": "string", "enum": ["sublayer", "reference"], "default": "sublayer"},
-                "picture": {"type": "string"},
-                "lop_output": {"type": "string"},
-                "resolution": {"type": "array", "items": {"type": "integer"}},
-                "prim_path": {"type": "string"},
-            },
-            "required": [],
-        },
-    ),
-    "version_up_usd_output": (
-        "version_up_usd_output",
-        "Duplicate USD ROP/componentoutput with incremented _v### suffix",
-        {
-            "type": "object",
-            "properties": {
-                "node_path": {"type": "string"},
-                "create_import_lop": {"type": "boolean", "default": False},
-                "import_mode": {"type": "string", "enum": ["sublayer", "reference"], "default": "sublayer"},
-            },
-            "required": ["node_path"],
-        },
-    ),
     "extract_usd_cameras": (
         "extract_usd_cameras",
         "Create Solaris camera LOPs from USD camera prims on a cooked stage",
@@ -514,19 +468,6 @@ EXTENDED_TOOLS = {
                 "cook_first": {"type": "boolean", "default": True},
             },
             "required": ["node_path"],
-        },
-    ),
-    "extract_usdz_archive": (
-        "extract_usdz_archive",
-        "Extract USDZ zip archive for texture/USD access",
-        {
-            "type": "object",
-            "properties": {
-                "usdz_path": {"type": "string"},
-                "extract_to": {"type": "string"},
-                "max_files": {"type": "integer", "default": 50},
-            },
-            "required": ["usdz_path"],
         },
     ),
     "analyze_usd_materials": (
@@ -543,25 +484,6 @@ EXTENDED_TOOLS = {
                     "default": "usd_prim",
                 },
                 "cook_first": {"type": "boolean", "default": True},
-            },
-            "required": ["node_path"],
-        },
-    ),
-    "import_usd_materials": (
-        "import_usd_materials",
-        "Rebuild USD materials as Material Library + Assign Material LOPs",
-        {
-            "type": "object",
-            "properties": {
-                "node_path": {"type": "string"},
-                "parent_path": {"type": "string", "default": "/stage"},
-                "max_materials": {"type": "integer", "default": 20},
-                "engine": {"type": "string", "enum": ["mtlx", "openpbr"], "default": "mtlx"},
-                "naming_strategy": {"type": "string", "default": "usd_prim"},
-                "assign_all": {"type": "boolean", "default": True},
-                "dry_run": {"type": "boolean", "default": False},
-                "build_empty": {"type": "boolean", "default": False},
-                "wire_source": {"type": "boolean", "default": True},
             },
             "required": ["node_path"],
         },

@@ -2,7 +2,7 @@
 [project]
 name = "houdini-mcp"
 version = "1.0.0"
-description = "Model Context Protocol (MCP) server for Houdini integration with Claude Code"
+description = "Model Context Protocol (MCP) server for Houdini integration with AI agents"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

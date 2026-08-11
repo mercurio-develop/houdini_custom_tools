@@ -1,4 +1,4 @@
-"""HMCP handler modules — original implementations for custom_tools pipeline."""
+"""HMCP handler modules — production pipeline tools for custom_tools."""
 
 from HMCP.handlers.assets import COMMANDS as asset_commands
 from HMCP.handlers.graph import COMMANDS as graph_commands

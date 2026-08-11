@@ -34,8 +34,6 @@ Alternative: copy the JSON from `config_helper.py` into global `~/.cursor/mcp.js
 
 Restart Cursor → **Settings → MCP** → confirm `houdini` shows connected (green) after the in-Houdini server is running.
 
-Optional second server **`production-hub`** is configured in the same `mcp.json` for ftrack/Iconik publish (no Houdini required).
-
 ## 3. Start the in-Houdini server
 
 **Shelf (recommended):** Custom Tools → **HMCP** (toggle on/off)

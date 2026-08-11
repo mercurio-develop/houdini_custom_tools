@@ -1,1 +1,0 @@
-"""Data models and structures for LOPS Asset Builder Workflow."""

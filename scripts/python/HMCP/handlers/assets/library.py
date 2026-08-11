@@ -7,7 +7,7 @@ from collections import defaultdict
 
 import hou
 
-from integrations.usd_discovery import default_discovery_config, discover_usd_files
+from modules.usd_discovery import default_discovery_config, discover_usd_files
 from modules.asset_folder_scanner import scan_asset_folder
 from modules.usd_reference_importer import import_scanned_assets
 

@@ -107,8 +107,20 @@ class FilePathsManagerUI(QtWidgets.QMainWindow):
         self.reveal_button = QtWidgets.QPushButton("Reveal in Explorer")
         button_layout.addWidget(self.reveal_button)
 
+        # Edit / fix single path
+        self.edit_path_button = QtWidgets.QPushButton("Edit Path…")
+        self.edit_path_button.setToolTip("Change the file path on the selected row")
+        button_layout.addWidget(self.edit_path_button)
+
+        self.fix_path_button = QtWidgets.QPushButton("Fix Broken Path")
+        self.fix_path_button.setToolTip("Pick a replacement file when the path is missing")
+        button_layout.addWidget(self.fix_path_button)
+
         # Batch fix button
-        self.batch_fix_button = QtWidgets.QPushButton("Batch Fix Checked Paths")
+        self.batch_fix_button = QtWidgets.QPushButton("Batch Re-root Paths…")
+        self.batch_fix_button.setToolTip(
+            "Replace a folder prefix on checked rows (e.g. move project to a new drive)"
+        )
         button_layout.addWidget(self.batch_fix_button)
 
         # Add button layout to main layout
@@ -165,8 +177,10 @@ class FilePathsManagerUI(QtWidgets.QMainWindow):
     def _setup_connections(self):
         '''Set up signal connections'''
         self.scan_button.clicked.connect(self.scan_all_paths)
-        self.paths_tree.itemDoubleClicked.connect(self.select_node)
+        self.paths_tree.itemDoubleClicked.connect(self._on_item_double_clicked)
         self.reveal_button.clicked.connect(self.reveal_in_explorer)
+        self.edit_path_button.clicked.connect(self._edit_selected_path)
+        self.fix_path_button.clicked.connect(self.fix_broken_path)
         self.batch_fix_button.clicked.connect(self.batch_fix_paths)
         self.paths_tree.customContextMenuRequested.connect(self._show_context_menu)
 
@@ -461,7 +475,44 @@ class FilePathsManagerUI(QtWidgets.QMainWindow):
         return node.name(), node.path(), node.type().name()
 
     def _update_stats(self):
-        self.total_nodes_label.setText(f"Total Nodes with Paths: {self.total_paths} (Broken: {self.total_broken_paths})")
+        self.total_nodes_label.setText(
+            f"Total Nodes with Paths: {self.total_paths} (Broken: {self.total_broken_paths}) — "
+            "double-click a path to edit, or use Edit Path / Batch Re-root"
+        )
+
+    def _path_item_from_tree_item(self, item):
+        """Return the leaf path row, or None if this is a folder grouping row."""
+        if not item:
+            return None
+        if item.data(0, QtCore.Qt.UserRole) is not None:
+            return item
+        return None
+
+    def _selected_path_item(self):
+        for item in self.paths_tree.selectedItems():
+            path_item = self._path_item_from_tree_item(item)
+            if path_item:
+                return path_item
+        return None
+
+    def _on_item_double_clicked(self, item, column):
+        path_item = self._path_item_from_tree_item(item)
+        if path_item and column == 4:
+            self._edit_path_simple_dialog(path_item)
+        elif path_item:
+            self.select_node(path_item)
+        else:
+            item.setExpanded(not item.isExpanded())
+
+    def _edit_selected_path(self):
+        item = self._selected_path_item()
+        if not item:
+            hou.ui.displayMessage(
+                "Select a path row first (not a network folder).",
+                severity=hou.severityType.Warning,
+            )
+            return
+        self._edit_path_simple_dialog(item)
 
     def select_node(self, item):
         try:
@@ -532,20 +583,24 @@ class FilePathsManagerUI(QtWidgets.QMainWindow):
             )
 
     def reveal_in_explorer(self):
-        selected_items = self.paths_tree.selectedItems()
-        if not selected_items:
-            hou.ui.displayMessage("Please select a path first",
-                                 severity=hou.severityType.Error)
+        item = self._selected_path_item()
+        if not item:
+            hou.ui.displayMessage(
+                "Select a path row first (not a network folder).",
+                severity=hou.severityType.Warning,
+            )
             return
-        self.reveal_in_explorer_for_item(selected_items[0])
+        self.reveal_in_explorer_for_item(item)
 
     def fix_broken_path(self):
-        selected_items = self.paths_tree.selectedItems()
-        if not selected_items:
-            hou.ui.displayMessage("Please select a path to fix",
-                                 severity=hou.severityType.Error)
+        item = self._selected_path_item()
+        if not item:
+            hou.ui.displayMessage(
+                "Select a path row first (not a network folder).",
+                severity=hou.severityType.Warning,
+            )
             return
-        self.fix_broken_path_for_item(selected_items[0])
+        self.fix_broken_path_for_item(item)
 
     def _find_similar_files(self, broken_path):
         suggestions = []
@@ -975,12 +1030,23 @@ class FilePathsManagerUI(QtWidgets.QMainWindow):
         layout.addWidget(button_box)
 
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
-            new_path = path_edit.text()
+            new_path = path_edit.text().strip()
             if new_path != current_path:
                 parm.set(new_path)
-                self.scan_all_paths()
-                hou.ui.displayMessage(f"Updated path for {node.name()}",
-                                     severity=hou.severityType.Message)
+                item.setText(4, new_path)
+                expanded = hou.text.expandString(new_path)
+                exists = self._check_path_exists(os.path.normpath(expanded))
+                color = QtGui.QColor(0, 128, 0) if exists else QtGui.QColor(255, 0, 0)
+                for col in range(5):
+                    item.setForeground(col, QtGui.QBrush(color))
+                node_data = item.data(0, QtCore.Qt.UserRole)
+                if node_data:
+                    node_data["file_path"] = new_path
+                    node_data["path_exists"] = exists
+                hou.ui.displayMessage(
+                    f"Updated path for {node.name()}",
+                    severity=hou.severityType.Message,
+                )
 
     def _browse_for_file(self, line_edit, current_path):
         file_type = self._get_file_type_from_path(current_path)

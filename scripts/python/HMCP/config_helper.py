@@ -1,5 +1,5 @@
 """
-Helper script to generate MCP configuration for Cursor and Claude Code.
+Helper script to generate MCP configuration for Cursor and other MCP agents.
 
 Run this script to get the configuration JSON for your MCP client.
 """
@@ -17,7 +17,7 @@ def get_bridge_path():
 
 def generate_mcp_config():
     """
-    Generate the MCP configuration for Cursor / Claude Code.
+    Generate the MCP configuration for Cursor and other MCP agents.
 
     Returns:
         dict: Configuration to add to MCP client settings
@@ -59,13 +59,12 @@ def print_config():
     print("  $CUSTOM_TOOLS/.cursor/mcp.json.example")
     print("\nCursor (global):")
     print("  ~/.cursor/mcp.json")
-    print("\nClaude Code:")
-    print("  ~/.config/claude-code/settings.json (Linux)")
-    print("  ~/Library/Application Support/Claude Code/settings.json (macOS)")
+    print("\nOther MCP clients:")
+    print("  Paste the JSON above into your agent's MCP settings (any MCP-compatible client).")
     print("=" * 80)
 
 
-# Backward-compatible alias
+# Backward-compatible alias (legacy name)
 generate_claude_code_config = generate_mcp_config
 
 

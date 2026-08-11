@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Houdini MCP Bridge - Connects Claude Code to Houdini via Model Context Protocol
+Houdini MCP Bridge — connects an MCP agent to Houdini via Model Context Protocol
 
 This script acts as a bridge between:
-- Claude Code (via MCP stdio protocol)
+- MCP clients (Cursor and other agents via stdio)
 - Houdini MCP Server (via TCP socket on localhost:9876)
 
-It translates MCP tool calls into Houdini commands and returns results to Claude.
+It translates MCP tool calls into Houdini commands and returns results to the agent.
 """
 
 import socket
@@ -35,7 +35,7 @@ from mcp_resources import (
 
 class HoudiniMCPBridge:
     """
-    Bridge between MCP protocol (Claude) and Houdini TCP server.
+    Bridge between MCP protocol (agent client) and Houdini TCP server.
 
     Maintains a persistent connection to Houdini and translates
     MCP tool calls into Houdini commands.
@@ -129,7 +129,7 @@ mcp_server = Server("houdini-mcp")
 @mcp_server.list_tools()
 async def handle_list_tools() -> list[types.Tool]:
     """
-    List all available tools for Claude to use.
+    List all available tools for MCP agents.
 
     Returns:
         list[types.Tool]: Available MCP tools
@@ -290,39 +290,6 @@ async def handle_list_tools() -> list[types.Tool]:
                     }
                 },
                 "required": ["geo_path", "material_name"]
-            }
-        ),
-        types.Tool(
-            name="render_single_view",
-            description="Render a single view from Houdini (placeholder implementation)",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "camera": {
-                        "type": "string",
-                        "description": "Camera path or 'default'"
-                    },
-                    "resolution": {
-                        "type": "array",
-                        "description": "Resolution [width, height]",
-                        "items": {"type": "integer"}
-                    }
-                },
-                "required": []
-            }
-        ),
-        types.Tool(
-            name="import_url",
-            description="Download and import a model from URL (supports USD, GLTF)",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "url": {
-                        "type": "string",
-                        "description": "URL to download (supports .zip files)"
-                    }
-                },
-                "required": ["url"]
             }
         ),
         types.Tool(
@@ -511,7 +478,7 @@ async def handle_call_tool(
     arguments: dict
 ) -> list[types.TextContent | types.ImageContent | types.EmbeddedResource]:
     """
-    Handle tool execution requests from Claude.
+    Handle tool execution requests from an MCP agent.
 
     Args:
         name (str): Tool name
@@ -531,8 +498,6 @@ async def handle_call_tool(
             'get_node_info': 'get_node_info',
             'execute_code': 'execute_code',
             'set_material': 'set_material',
-            'render_single_view': 'render_single_view',
-            'import_url': 'import_opus_url',
             'scan_asset_folder': 'scan_asset_folder',
             'run_lops_asset_builder': 'run_lops_asset_builder',
             'run_psx_asset_build': 'run_psx_asset_build',
