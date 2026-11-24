@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 import hou
 
 from modules.misc_utils import MaterialNamingConfig, _sanitize
-from tools.lops_asset_builder_v3.component_material_custom import build_component_material_custom
 from tools.lops_asset_builder_v3.componentoutput_custom import componentoutput_custom_creation
 from tools.lops_asset_builder_v3.material_builder import create_materials, extract_material_names
 
@@ -18,6 +17,15 @@ if TYPE_CHECKING:
 
 def _create_convex(parent):
     return parent.createNode("convexdecomposition", "convex_hull_setup")
+
+
+def _bind_materials_by_mesh_name(comp_material, material_lib) -> None:
+    """Bind each mesh to the material of the same name (/ASSET/mtl/<mesh name>)."""
+    names = [child.name() for child in material_lib.children()]
+    comp_material.parm("nummaterials").set(len(names))
+    for i, name in enumerate(names, 1):
+        comp_material.parm(f"primpattern{i}").set(f"%type:Mesh & /ASSET/**/{name}")
+        comp_material.parm(f"matspecpath{i}").set(f"/ASSET/mtl/{name}")
 
 
 def prepare_imported_asset(
@@ -223,11 +231,13 @@ def build_geo_and_mtl_variants(
         material_lib = stage_context.createNode(
             "materiallibrary", _sanitize(f"{node_name}_mtl_{mtl_folder_name}")
         )
-        comp_material = build_component_material_custom(
-            node_name=_sanitize(f"{node_name}_material_variant_{mtl_folder_name}")
+        # Stock componentmaterial: it records component:mtl:lastnode, which componentoutput's
+        # fetch_mtls needs to write mtl.usdc. The custom subnet did not, so mtl.usdc came out empty.
+        comp_material = stage_context.createNode(
+            "componentmaterial", _sanitize(f"{node_name}_material_variant_{mtl_folder_name}")
         )
-        if mtl_vset_name:
-            comp_material.parm("variantset").set(mtl_vset_name)
+        comp_material.parm("variantset").set(mtl_vset_name or "mtl_variant")
+        comp_material.parm("variantname").set(comp_material.name())
         material_lib.parm("matpathprefix").set("/ASSET/mtl/")
         comp_material.setInput(0, first_geo_node if index == 0 else comp_material_last)
         comp_material.setInput(1, material_lib)
@@ -259,6 +269,7 @@ def build_geo_and_mtl_variants(
             progress=progress,
             naming_config=naming_config,
         )
+        _bind_materials_by_mesh_name(comp_material, material_lib)
         nodes_to_layout.extend([material_lib, comp_material])
 
     if comp_material_last is not None:
