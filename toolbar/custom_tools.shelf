@@ -1,162 +1,132 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <shelfDocument>
-  <!-- This file contains definitions of shelves, toolbars, and tools.
- It should not be hand-edited when it is being used by the application.
- Note, that two definitions of the same element are not allowed in
- a single file. -->
+  
 
   <toolshelf name="Custom Tools" label="Custom Tools">
-    <memberTool name="Reload Packages"/>
-    <memberTool name="create_project"/>
-    <memberTool name="clean_logs"/>
-    <memberTool name="Project Manager"/>
-    <memberTool name="Scene Cache Mangater"/>
-    <memberTool name="batch_asset_builder"/>
-    <memberTool name="lops_asset_builder"/>
-    <memberTool name="psx_tools"/>
-    <memberTool name="lops_light_rig"/>
-    <memberTool name="place_light_highlight"/>
-    <memberTool name="split_geo"/>
-    <memberTool name="group-importer"/>
-    <memberTool name="top_net"/>
-    <memberTool name="iconik_ingest_top"/>
-    <memberTool name="file_path_manager"/>
-    <memberTool name="collect_nodes_script"/>
-    <memberTool name="customize_variant_name"/>
-    <memberTool name="component_material_custom"/>
-    <memberTool name="asset_builder_template"/>
-    <memberTool name="merges_nodes_from_file"/>
-    <memberTool name="tx_to_mtlx_v2"/>
-    <memberTool name="show_node_inputs"/>
-    <memberTool name="node_batch_setter"/>
-    <memberTool name="texture_from_disk"/>
-    <memberTool name="get_node_code"/>
-    <memberTool name="HMCP"/>
-    <memberTool name="convert_to_mtlx_usd"/>
-    <memberTool name="select_all_node_of_same_type"/>
+    <memberTool name="Reload Packages" />
+    <memberTool name="create_project" />
+    <memberTool name="clean_logs" />
+    <memberTool name="Project Manager" />
+    <memberTool name="scene_cache_manager" />
+    <memberTool name="batch_asset_builder" />
+    <memberTool name="lops_asset_builder" />
+    <memberTool name="psx_tools" />
+    <memberTool name="lops_light_rig" />
+    <memberTool name="place_light_highlight" />
+    <memberTool name="split_geo" />
+    <memberTool name="group-importer" />
+    <memberTool name="top_net" />
+    <memberTool name="file_path_manager" />
+    <memberTool name="collect_nodes_script" />
+    <memberTool name="customize_variant_name" />
+    <memberTool name="component_material_custom" />
+    <memberTool name="asset_builder_template" />
+    <memberTool name="merges_nodes_from_file" />
+    <memberTool name="tx_to_mtlx_v2" />
+    <memberTool name="show_node_inputs" />
+    <memberTool name="node_batch_setter" />
+    <memberTool name="texture_from_disk" />
+    <memberTool name="get_node_code" />
+    <memberTool name="HMCP" />
+    <memberTool name="convert_to_mtlx_usd" />
+    <memberTool name="select_all_node_of_same_type" />
   </toolshelf>
 
   <tool name="Reload Packages" label="Reload Packages and Modules" icon="hicon:/SVGIcons.index?NETVIEW_reload_needsupdate.svg">
-    <helpText><![CDATA["""Reload Packages """]]></helpText>
-    <script scriptType="python"><![CDATA[import custom_utils
+    <helpText>"""Reload Packages """</helpText>
+    <script scriptType="python">import custom_utils
 
-custom_utils.reload_packages(kwargs)]]></script>
+custom_utils.reload_packages(kwargs)</script>
   </tool>
 
   <tool name="Project Manager" label="Project Manager" icon="hicon:/SVGIcons.index?LOP_stagemanager.svg">
-    <script scriptType="python"><![CDATA[from pipeline.project_manager import ProjectManager
+    <script scriptType="python">from pipeline.project_manager import ProjectManager
 
 win = ProjectManager()
-win.show()]]></script>
+win.show()</script>
   </tool>
 
-  <tool name="Scene Cache Mangater" label="Scene Cache Manager" icon="hicon:/SVGIcons.index?LOP_filecache.svg">
-    <script scriptType="python"><![CDATA[from tools import scene_cache_manager as cache_m
+  <tool name="scene_cache_manager" label="Scene Cache Manager" icon="hicon:/SVGIcons.index?LOP_filecache.svg">
+    <script scriptType="python">from tools import scene_cache_manager as cache_m
 
 win = cache_m.SceneCacheManagerUI()
 win.show()
-]]></script>
+</script>
   </tool>
 
   <tool name="lops_light_rig" label="LOPS Light Rig" icon="hicon:/SVGIcons.index?BUTTONS_add_light.svg">
-    <script scriptType="python"><![CDATA[from tools import lops_light_rig
+    <script scriptType="python">from tools import lops_light_rig
 
-lops_light_rig.create_three_point_light()]]></script>
+lops_light_rig.create_three_point_light()</script>
   </tool>
 
   <tool name="place_light_highlight" label="Place Light Highlight" icon="hicon:/SVGIcons.index?BUTTONS_light_solo.svg">
-    <script scriptType="python"><![CDATA[scene_viewer = hou.ui.paneTabOfType(hou.paneTabType.SceneViewer)
-scene_viewer.setCurrentState("_place_light")]]></script>
+    <script scriptType="python">scene_viewer = hou.ui.paneTabOfType(hou.paneTabType.SceneViewer)
+scene_viewer.setCurrentState("_place_light")</script>
   </tool>
 
   <tool name="lops_asset_builder" label="Lops Asset Builder" icon="hicon:/SVGIcons.index?SHELF_asset_library.svg">
-    <script scriptType="python"><![CDATA[import importlib
+    <script scriptType="python">import importlib
 import tools.lops_asset_builder_v3.lops_asset_builder_v3 as lops_asset_builder_v3
 
 importlib.reload(lops_asset_builder_v3)
-lops_asset_builder_v3.create_component_builder()]]></script>
+lops_asset_builder_v3.create_component_builder()</script>
   </tool>
 
   <tool name="psx_tools" label="PSX Retro Tools" icon="hicon:/SVGIcons.index?SOP_polyreduce.svg">
-    <script scriptType="python"><![CDATA[import importlib
+    <script scriptType="python">import importlib
 from tools.psx_tools import psx_tools_ui
 
 importlib.reload(psx_tools_ui)
-psx_tools_ui.show_psx_tools_dialog()]]></script>
+psx_tools_ui.show_psx_tools_dialog()</script>
   </tool>
 
   <tool name="clean_logs" label="Clean Logs" icon="hicon:/SVGIcons.index?ENGINE_clean_temp.svg">
-    <script scriptType="python"><![CDATA[from custom_utils import clean_log
+    <script scriptType="python">from custom_utils import clean_log
 
-clean_log()]]></script>
+clean_log()</script>
   </tool>
 
   <tool name="create_project" label="Create Project" icon="hicon:/SVGIcons.index?SOP_filecache.svg">
-    <script scriptType="python"><![CDATA[from pipeline.create_project import CreateProject
+    <script scriptType="python">from pipeline.create_project import CreateProject
 win = CreateProject()
 win.show()
 
 
 
-]]></script>
+</script>
   </tool>
 
   <tool name="tx_to_mtlx_v2" label="Tx To Mtlx V2" icon="hicon:/SVGIcons.index?LOP_editmaterial.svg">
-    <script scriptType="python"><![CDATA[from tools.material_tools.TexToMtlX_V2 import tex_to_mtlx as to_mt
+    <script scriptType="python">from tools.material_tools.TexToMtlX_V2 import tex_to_mtlx as to_mt
 
 win = to_mt.TxToMtlx()
 win.show()
 
-]]></script>
+</script>
   </tool>
 
   <tool name="split_geo" label="Split Geo" icon="hicon:/SVGIcons.index?DATATYPES_geometrydata.svg">
-    <script scriptType="python"><![CDATA[from tools import split_geo
+    <script scriptType="python">from tools import split_geo
 
-split_geo.split_geo();]]></script>
-  </tool>
-
-  <tool name="batch_importer" label="BATCH IMPORTER WITH ANALYZE" icon="PLASMA_App">
-    <script scriptType="python"><![CDATA[from tools import batch_importer_with_analyze
-
-batch_importer_with_analyze.batch_importer()]]></script>
-  </tool>
-
-  <tool name="spaceship_visualizer" label="Spaceship Visualizer" icon="PLASMA_App">
-    <script scriptType="python"><![CDATA[
-from tools import spaceship_visualizer
-spaceship_visualizer.main()]]></script>
-  </tool>
-
-  <tool name="asset_builder" label="Asset Builder" icon="PLASMA_App">
-    <script scriptType="python"><![CDATA[from tools.asset_builder import asset_builder
-
-# Show the UI dialog to select an asset file
-asset_builder.show_asset_builder_ui()]]></script>
-  </tool>
-
-  <tool name="asset_builder_v2" label="Asset Builder V2" icon="hicon:/SVGIcons.index?SOP_usdconfiguregeometry.svg">
-    <script scriptType="python"><![CDATA[from tools.lops_asset_builder_workflow.main import create_lops_asset_builder_workflow
-
-create_lops_asset_builder_workflow()
-]]></script>
+split_geo.split_geo();</script>
   </tool>
 
   <tool name="group-importer" label="Group Importer" icon="hicon:/SVGIcons.index?MISC_asset_browser.svg">
-    <script scriptType="python"><![CDATA[from tools.batch_import_workflow import batch_import_workflow
+    <script scriptType="python">from tools.batch_import_workflow import batch_import_workflow
 
 workflow = batch_import_workflow.BatchImportWorkflow()
 
-workflow.create_workflow()]]></script>
+workflow.create_workflow()</script>
   </tool>
 
   <tool name="create_lookdev_camera_for_selected" label="Create Camera" icon="PLASMA_App">
-    <script scriptType="python"><![CDATA[from tools import lops_lookdev_camera
-lops_lookdev_camera.create_lookdev_camera_for_selected()]]></script>
+    <script scriptType="python">from tools import lops_lookdev_camera
+lops_lookdev_camera.create_lookdev_camera_for_selected()</script>
   </tool>
 
   <tool name="top_net" label="Top net " icon="hicon:/SVGIcons.index?ENGINE_asset_help.svg">
-    <script scriptType="python"><![CDATA[import hou
+    <script scriptType="python">import hou
 import os
 
 def create_export_top_network():
@@ -269,26 +239,20 @@ for i, n in enumerate(nulls):
 
     return topnet
     
-create_export_top_network()]]></script>
-  </tool>
-
-  <tool name="iconik_ingest_top" label="Iconik USD Ingest TOPs" icon="hicon:/SVGIcons.index?TOP_wedge.svg">
-    <script scriptType="python"><![CDATA[from tools.iconik_tops.create_iconik_ingest_top import create_iconik_ingest_top
-
-create_iconik_ingest_top()]]></script>
+create_export_top_network()</script>
   </tool>
 
   <tool name="file_path_manager" label="File Path Manager" icon="hicon:/SVGIcons.index?TOP_fileremove.svg">
-    <script scriptType="python"><![CDATA[from tools import file_path_manager
+    <script scriptType="python">from tools import file_path_manager
 
-file_path_manager.FilePathsManagerUI().show()]]></script>
+file_path_manager.FilePathsManagerUI().show()</script>
   </tool>
 
   <tool name="collect_nodes_script" label="Shader Nodes Script" icon="hicon:/SVGIcons.index?BUTTONS_material_include.svg">
     <toolMenuContext name="network">
       <contextOpType>Vop/collect</contextOpType>
     </toolMenuContext>
-    <script scriptType="python"><![CDATA[
+    <script scriptType="python">
 import sys
 import toolutils
 
@@ -374,10 +338,10 @@ pane_node.setSelected(False, True)
 h_path = pane_node.path()
 h_preamble = 'set arg1 = "' + h_path + '"\n'
 h_cmd = r'''
-if ($argc < 2 || "$arg2" == "") then
+if ($argc &lt; 2 || "$arg2" == "") then
    set arg2 = 0
 endif
-if ($argc < 3 || "$arg3" == "") then
+if ($argc &lt; 3 || "$arg3" == "") then
    set arg3 = 0
 endif
 # Automatically generated script
@@ -487,7 +451,7 @@ opuserdata -n '___toolid___' -v 'collect_matx_shaders' $_stage_materiallibrary1_
 # Node $_stage_materiallibrary1_materialx_base_color (Vop/mtlximage)
 set _stage_materiallibrary1_materialx_base_color = `run("opadd -e -n -v mtlximage base_color")`
 oplocate -x `$arg2 + -12.078488999999999` -y `$arg3 + 16.902996999999999` $_stage_materiallibrary1_materialx_base_color
-opparm $_stage_materiallibrary1_materialx_base_color signature ( color3 ) file ( '`chs("../../shader/texture_folder")``chs("../../shader/model_name")`_`chs("../../shader/texture_name")`_BaseColor_ACES - ACEScg.<UDIM>.exr' ) filtertype ( cubic )
+opparm $_stage_materiallibrary1_materialx_base_color signature ( color3 ) file ( '`chs("../../shader/texture_folder")``chs("../../shader/model_name")`_`chs("../../shader/texture_name")`_BaseColor_ACES - ACEScg.&lt;UDIM&gt;.exr' ) filtertype ( cubic )
 opset -d off -r off -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -L off -M off -H on -E off $_stage_materiallibrary1_materialx_base_color
 opexprlanguage -s hscript $_stage_materiallibrary1_materialx_base_color
 opuserdata -n '___Version___' -v '' $_stage_materiallibrary1_materialx_base_color
@@ -497,7 +461,7 @@ opuserdata -n '___toolid___' -v 'collect_matx_shaders' $_stage_materiallibrary1_
 # Node $_stage_materiallibrary1_materialx_metallic (Vop/mtlximage)
 set _stage_materiallibrary1_materialx_metallic = `run("opadd -e -n -v mtlximage metallic")`
 oplocate -x `$arg2 + -12.078488999999999` -y `$arg3 + 14.431997000000001` $_stage_materiallibrary1_materialx_metallic
-opparm $_stage_materiallibrary1_materialx_metallic file ( '`chs("../../shader/texture_folder")``chs("../../shader/model_name")`_`chs("../../shader/texture_name")`_Metallic_Raw.<UDIM>.exr' ) filtertype ( cubic )
+opparm $_stage_materiallibrary1_materialx_metallic file ( '`chs("../../shader/texture_folder")``chs("../../shader/model_name")`_`chs("../../shader/texture_name")`_Metallic_Raw.&lt;UDIM&gt;.exr' ) filtertype ( cubic )
 opset -d off -r off -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -L off -M off -H on -E off $_stage_materiallibrary1_materialx_metallic
 opexprlanguage -s hscript $_stage_materiallibrary1_materialx_metallic
 opuserdata -n '___Version___' -v '' $_stage_materiallibrary1_materialx_metallic
@@ -507,7 +471,7 @@ opuserdata -n '___toolid___' -v 'collect_matx_shaders' $_stage_materiallibrary1_
 # Node $_stage_materiallibrary1_materialx_roughness (Vop/mtlximage)
 set _stage_materiallibrary1_materialx_roughness = `run("opadd -e -n -v mtlximage roughness")`
 oplocate -x `$arg2 + -12.078488999999999` -y `$arg3 + 11.862897` $_stage_materiallibrary1_materialx_roughness
-opparm $_stage_materiallibrary1_materialx_roughness file ( '`chs("../../shader/texture_folder")``chs("../../shader/model_name")`_`chs("../../shader/texture_name")`_Roughness_Raw.<UDIM>.exr' ) filtertype ( cubic )
+opparm $_stage_materiallibrary1_materialx_roughness file ( '`chs("../../shader/texture_folder")``chs("../../shader/model_name")`_`chs("../../shader/texture_name")`_Roughness_Raw.&lt;UDIM&gt;.exr' ) filtertype ( cubic )
 opset -d off -r off -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -L off -M off -H on -E off $_stage_materiallibrary1_materialx_roughness
 opexprlanguage -s hscript $_stage_materiallibrary1_materialx_roughness
 opuserdata -n '___Version___' -v '' $_stage_materiallibrary1_materialx_roughness
@@ -517,7 +481,7 @@ opuserdata -n '___toolid___' -v 'collect_matx_shaders' $_stage_materiallibrary1_
 # Node $_stage_materiallibrary1_materialx_normal (Vop/mtlximage)
 set _stage_materiallibrary1_materialx_normal = `run("opadd -e -n -v mtlximage normal")`
 oplocate -x `$arg2 + -12.078488999999999` -y `$arg3 + 6.1866296714563296` $_stage_materiallibrary1_materialx_normal
-opparm $_stage_materiallibrary1_materialx_normal signature ( color3 ) file ( '`chs("../../shader/texture_folder")``chs("../../shader/model_name")`_`chs("../../shader/texture_name")`_Normal_Raw.<UDIM>.exr' ) filtertype ( cubic )
+opparm $_stage_materiallibrary1_materialx_normal signature ( color3 ) file ( '`chs("../../shader/texture_folder")``chs("../../shader/model_name")`_`chs("../../shader/texture_name")`_Normal_Raw.&lt;UDIM&gt;.exr' ) filtertype ( cubic )
 opset -d off -r off -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -L off -M off -H on -E off $_stage_materiallibrary1_materialx_normal
 opexprlanguage -s hscript $_stage_materiallibrary1_materialx_normal
 opuserdata -n '___Version___' -v '' $_stage_materiallibrary1_materialx_normal
@@ -536,7 +500,7 @@ opuserdata -n '___toolid___' -v 'collect_matx_shaders' $_stage_materiallibrary1_
 # Node $_stage_materiallibrary1_materialx_height (Vop/mtlximage)
 set _stage_materiallibrary1_materialx_height = `run("opadd -e -n -v mtlximage height")`
 oplocate -x `$arg2 + -12.078488999999999` -y `$arg3 + 9.1284590190287211` $_stage_materiallibrary1_materialx_height
-opparm $_stage_materiallibrary1_materialx_height file ( '`chs("../../shader/texture_folder")``chs("../../shader/model_name")`_`chs("../../shader/texture_name")`_Height_Raw.<UDIM>.exr' ) filtertype ( cubic )
+opparm $_stage_materiallibrary1_materialx_height file ( '`chs("../../shader/texture_folder")``chs("../../shader/model_name")`_`chs("../../shader/texture_name")`_Height_Raw.&lt;UDIM&gt;.exr' ) filtertype ( cubic )
 opset -d off -r off -h off -f off -y off -t off -l off -s off -u off -F on -c on -e on -b off -L off -M off -H on -E off $_stage_materiallibrary1_materialx_height
 opexprlanguage -s hscript $_stage_materiallibrary1_materialx_height
 opuserdata -n '___Version___' -v '' $_stage_materiallibrary1_materialx_height
@@ -573,15 +537,15 @@ opwire -n $_stage_materiallibrary1_materialx_normal -0 $_stage_materiallibrary1_
 opcf ..
 
 set oidx = 0
-if ($argc >= 9 && "$arg9" != "") then
+if ($argc &gt;= 9 &amp;&amp; "$arg9" != "") then
     set oidx = $arg9
 endif
 
-if ($argc >= 5 && "$arg4" != "") then
+if ($argc &gt;= 5 &amp;&amp; "$arg4" != "") then
     set output = $_stage_materiallibrary1_materialx
     opwire -n $output -$arg5 $arg4
 endif
-if ($argc >= 6 && "$arg6" != "") then
+if ($argc &gt;= 6 &amp;&amp; "$arg6" != "") then
     set input = $_stage_materiallibrary1_shader
     if ($arg8) then
         opwire -n -i $arg6 -0 $input
@@ -592,7 +556,7 @@ endif
 opcf $saved_path
 '''
 hou.hscript(h_preamble + h_extra_args + h_cmd)
-]]></script>
+</script>
   </tool>
 
   <tool name="customize_variant_name" label="Customize Variant Name" icon="LOP_storeparametervalues">
@@ -600,7 +564,7 @@ hou.hscript(h_preamble + h_extra_args + h_cmd)
     <toolMenuContext name="network">
       <contextOpType>Lop/storeparametervalues</contextOpType>
     </toolMenuContext>
-    <script scriptType="python"><![CDATA[
+    <script scriptType="python">
 import sys
 import toolutils
 
@@ -686,10 +650,10 @@ pane_node.setSelected(False, True)
 h_path = pane_node.path()
 h_preamble = 'set arg1 = "' + h_path + '"\n'
 h_cmd = r'''
-if ($argc < 2 || "$arg2" == "") then
+if ($argc &lt; 2 || "$arg2" == "") then
    set arg2 = 0
 endif
-if ($argc < 3 || "$arg3" == "") then
+if ($argc &lt; 3 || "$arg3" == "") then
    set arg3 = 0
 endif
 # Automatically generated script
@@ -721,15 +685,15 @@ opcf $arg1
 opwire -n $_stage_prune1 -0 $_stage_component_parms
 
 set oidx = 0
-if ($argc >= 9 && "$arg9" != "") then
+if ($argc &gt;= 9 &amp;&amp; "$arg9" != "") then
     set oidx = $arg9
 endif
 
-if ($argc >= 5 && "$arg4" != "") then
+if ($argc &gt;= 5 &amp;&amp; "$arg4" != "") then
     set output = $_stage_component_parms
     opwire -n $output -$arg5 $arg4
 endif
-if ($argc >= 6 && "$arg6" != "") then
+if ($argc &gt;= 6 &amp;&amp; "$arg6" != "") then
     set input = $_stage_component_parms
     if ($arg8) then
         opwire -n -i $arg6 -0 $input
@@ -740,15 +704,15 @@ endif
 opcf $saved_path
 '''
 hou.hscript(h_preamble + h_extra_args + h_cmd)
-]]></script>
+</script>
   </tool>
 
-  <tool name="component_material_custom" label="Componetn Material Custom" icon="hicon:/SVGIcons.index?LOP_componentmaterial.svg">
+  <tool name="component_material_custom" label="Component Material Custom" icon="hicon:/SVGIcons.index?LOP_componentmaterial.svg">
     <helpURL>operator:Lop/subnet</helpURL>
     <toolMenuContext name="network">
       <contextOpType>Lop/subnet</contextOpType>
     </toolMenuContext>
-    <script scriptType="python"><![CDATA[
+    <script scriptType="python">
 import sys
 import toolutils
 
@@ -834,10 +798,10 @@ pane_node.setSelected(False, True)
 h_path = pane_node.path()
 h_preamble = 'set arg1 = "' + h_path + '"\n'
 h_cmd = r'''
-if ($argc < 2 || "$arg2" == "") then
+if ($argc &lt; 2 || "$arg2" == "") then
    set arg2 = 0
 endif
-if ($argc < 3 || "$arg3" == "") then
+if ($argc &lt; 3 || "$arg3" == "") then
    set arg3 = 0
 endif
 # Automatically generated script
@@ -982,15 +946,15 @@ opwire -n $_stage_component_material_custom_setvariant1 -0 $_stage_component_mat
 opcf ..
 
 set oidx = 0
-if ($argc >= 9 && "$arg9" != "") then
+if ($argc &gt;= 9 &amp;&amp; "$arg9" != "") then
     set oidx = $arg9
 endif
 
-if ($argc >= 5 && "$arg4" != "") then
+if ($argc &gt;= 5 &amp;&amp; "$arg4" != "") then
     set output = $_stage_component_material_custom
     opwire -n $output -$arg5 $arg4
 endif
-if ($argc >= 6 && "$arg6" != "") then
+if ($argc &gt;= 6 &amp;&amp; "$arg6" != "") then
     set input = $_stage_component_material_custom
     if ($arg8) then
         opwire -n -i $arg6 -0 $input
@@ -1001,11 +965,11 @@ endif
 opcf $saved_path
 '''
 hou.hscript(h_preamble + h_extra_args + h_cmd)
-]]></script>
+</script>
   </tool>
 
   <tool name="asset_builder_template" label="Asset Builder Template" icon="hicon:/SVGIcons.index?BUTTONS_addasset.svg">
-    <script scriptType="python"><![CDATA[import hou
+    <script scriptType="python">import hou
 import os
 
 path = hou.expandString("$CUSTOM_TOOLS/templates/Asset_Builder_Template.hiplc")
@@ -1025,75 +989,69 @@ else:
             f"Failed to merge Asset Builder Template:\n{exc}",
             severity=hou.severityType.Error,
             title="Asset Builder Template",
-        )]]></script>
+        )</script>
   </tool>
 
   <tool name="merges_nodes_from_file" label="Merge Nodes From HIP FILE" icon="hicon:/SVGIcons.index?COP2_file.svg">
-    <script scriptType="python"><![CDATA[from tools import merge_nodes_from_hipfile
+    <script scriptType="python">from tools import merge_nodes_from_hipfile
 
-merge_nodes_from_hipfile.show_merge_dialog()]]></script>
+merge_nodes_from_hipfile.show_merge_dialog()</script>
   </tool>
 
   <tool name="show_node_inputs" label="Show Node Inputs" icon="hicon:/SVGIcons.index?VOP_hasinput.svg">
-    <script scriptType="python"><![CDATA[from tools import reveal_node_inputs_and_names
+    <script scriptType="python">from tools import reveal_node_inputs_and_names
 
-reveal_node_inputs_and_names.show_node_inputs()]]></script>
+reveal_node_inputs_and_names.show_node_inputs()</script>
   </tool>
 
   <tool name="node_batch_setter" label="Node Batch Setter" icon="hicon:/SVGIcons.index?DATATYPES_node_list.svg">
-    <script scriptType="python"><![CDATA[from tools import node_batch_setter
+    <script scriptType="python">from tools import node_batch_setter
 
 
 win = node_batch_setter.NodeBatchSetterUI()
-win.show()]]></script>
+win.show()</script>
   </tool>
 
   <tool name="texture_from_disk" label="Texture From Disk" icon="hicon:/SVGIcons.index?SHELF_temperature_from_texture.svg">
-    <script scriptType="python"><![CDATA[from tools import texture_from_disk as TFD
+    <script scriptType="python">from tools import texture_from_disk as TFD
 
 TFD.texture_from_disk()
 
-]]></script>
+</script>
   </tool>
 
   <tool name="get_node_code" label="Get Node Code" icon="hicon:/SVGIcons.index?LOP_editpropertiesfromnode.svg">
-    <script scriptType="python"><![CDATA[from tools import get_node_code
+    <script scriptType="python">from tools import get_node_code
 
 get_node_code.export_node_as_code()
-]]></script>
-  </tool>
-
-  <tool name="houdini_mcp" label="Houdini MCP" icon="PLASMA_App">
-    <script scriptType="python"><![CDATA[from HMCP.shelf_tool import toggle_mcp_server
-toggle_mcp_server()
-]]></script>
+</script>
   </tool>
 
   <tool name="HMCP" label="HMCP" icon="hicon:/SVGIcons.index?MISC_server.svg">
-    <script scriptType="python"><![CDATA[from HMCP.shelf_tool import toggle_mcp_server
+    <script scriptType="python">from HMCP.shelf_tool import toggle_mcp_server
 toggle_mcp_server()
-]]></script>
+</script>
   </tool>
 
   <tool name="FORCESTART" label="FORCESTART" icon="PLASMA_App">
-    <script scriptType="python"><![CDATA[from HMCP.force_restart import force_restart_server
-force_restart_server()]]></script>
+    <script scriptType="python">from HMCP.force_restart import force_restart_server
+force_restart_server()</script>
   </tool>
 
   <tool name="convert_to_mtlx_usd" label="Convert To MTLX &amp; USD" icon="hicon:/SVGIcons.index?COMMON_houdinimaterialx.svg">
-    <script scriptType="python"><![CDATA[from tools.material_tools.TexToMtlx_USD.tex_to_mtlx_standalone import show_standalone_converter
-show_standalone_converter()]]></script>
+    <script scriptType="python">from tools.material_tools.TexToMtlx_USD.tex_to_mtlx_standalone import show_standalone_converter
+show_standalone_converter()</script>
   </tool>
 
   <tool name="batch_asset_builder" label="Batch Asset Builder" icon="hicon:/SVGIcons.index?MISC_asset_browser.svg">
-    <script scriptType="python"><![CDATA[from tools.lops_asset_builder_v3 import batch_asset_builder
+    <script scriptType="python">from tools.lops_asset_builder_v3 import batch_asset_builder
 batch_asset_builder.show_batch_asset_builder()
-]]></script>
+</script>
   </tool>
 
   <tool name="select_all_node_of_same_type" label="Select All Nodes Of The Same Type" icon="hicon:/SVGIcons.index?DATATYPES_node_list.svg">
-    <script scriptType="python"><![CDATA[from tools.select_same_type_simple import select_same_type
+    <script scriptType="python">from tools.select_same_type_simple import select_same_type
 select_same_type()
-]]></script>
+</script>
   </tool>
 </shelfDocument>

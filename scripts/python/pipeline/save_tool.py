@@ -18,8 +18,7 @@ class SaveToolWindow(QtWidgets.QWidget):
         }
     # Create a custom signal for file saved
     file_saved = QtCore.Signal()
-    def __init__(self, parent=None):
-        super(SaveToolWindow, self).__init__(parent)
+
     def __init__(self, project_data=None,scene_name=None,project_name=None,file_name=None):
         super().__init__()
         # Basic Window setup

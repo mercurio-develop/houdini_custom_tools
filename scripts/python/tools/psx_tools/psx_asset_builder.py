@@ -8,14 +8,14 @@ import hou
 
 from tools.lops_asset_builder_v3.asset_builder_config import AssetBuilderConfig
 from tools.lops_asset_builder_v3.asset_builder_engine import run_asset_build
-from tools.lops_asset_builder_v3.asset_builder_ui import ProgressReporter
+from tools.lops_asset_builder_v3.asset_builder_progress import ConsoleProgressReporter, ProgressLike
 from tools.psx_tools.karma_presets import apply_psx_karma_settings
 from tools.psx_tools.psx_config import PSXBuildConfig
 from tools.psx_tools.psx_sop_pipeline import patch_geo_import_with_psx
 from tools.psx_tools.texture_process import process_texture_folder, resolve_psx_texture_folder
 
 
-def run_psx_asset_build(build: PSXBuildConfig, progress: ProgressReporter | None = None) -> bool:
+def run_psx_asset_build(build: PSXBuildConfig, progress: ProgressLike | None = None) -> bool:
     """
     Full PSX asset pipeline:
     1. Dither/downscale textures (optional)
@@ -24,7 +24,12 @@ def run_psx_asset_build(build: PSXBuildConfig, progress: ProgressReporter | None
     4. Apply Karma PSX render preset (optional)
     """
     if progress is None:
-        progress = ProgressReporter("PSX Asset Builder")
+        if hou.isUIAvailable():
+            from tools.lops_asset_builder_v3.asset_builder_ui import ProgressReporter
+
+            progress = ProgressReporter("PSX Asset Builder")
+        else:
+            progress = ConsoleProgressReporter(verbose=True)
 
     texture_folder = build.folder_textures
     if build.psx.process_textures and texture_folder and os.path.isdir(texture_folder):
@@ -66,7 +71,7 @@ def run_psx_asset_build(build: PSXBuildConfig, progress: ProgressReporter | None
     return True
 
 
-def _patch_psx_on_built_asset(comp_out: hou.Node, psx_cfg, progress: ProgressReporter) -> None:
+def _patch_psx_on_built_asset(comp_out: hou.Node, psx_cfg, progress: ProgressLike) -> None:
     """Walk upstream componentgeometry nodes and insert PSX SOP chains."""
     visited: set[str] = set()
     stack = list(comp_out.inputs())

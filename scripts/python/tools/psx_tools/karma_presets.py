@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hou
 
+from modules.houdini_node_utils import set_karma_resolution
 from tools.psx_tools.psx_config import PSXAssetConfig
 
 
@@ -25,17 +26,7 @@ def apply_psx_karma_settings(
         node = stage.createNode("karmarenderproperties", "psx_karma_settings")
 
     res_x, res_y = cfg.render_resolution
-    for parm_name, value in (
-        ("resolution", (res_x, res_y)),
-        ("resolutionX", res_x),
-        ("resolutionY", res_y),
-    ):
-        p = node.parm(parm_name) or node.parmTuple(parm_name)
-        if p is not None:
-            try:
-                p.set(value)
-            except Exception:
-                pass
+    set_karma_resolution(node, res_x, res_y)
 
     if cfg.disable_aa:
         for name in ("pixelfilter", "filter", "xfilter", "yfilter"):

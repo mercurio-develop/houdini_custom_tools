@@ -8,6 +8,7 @@ import tempfile
 
 import hou
 
+from modules.houdini_node_utils import set_karma_resolution
 from tools.lops_asset_builder_v3.asset_builder_graph import create_karma_nodes
 from tools.psx_tools.karma_presets import apply_psx_karma_settings
 from tools.psx_tools.psx_config import PSXAssetConfig
@@ -115,9 +116,7 @@ def render_karma_preview(params: dict) -> dict:
         rop.setInput(0, lop_node)
 
     if karma is not None:
-        _set_parm(karma, ("resolution",), (res_x, res_y))
-        _set_parm(karma, ("resolutionX",), res_x)
-        _set_parm(karma, ("resolutionY",), res_y)
+        set_karma_resolution(karma, res_x, res_y)
         camera_path = params.get("camera_path") or params.get("camera")
         if camera_path:
             _set_parm(karma, ("camera", "camerapath"), camera_path)

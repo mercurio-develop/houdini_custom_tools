@@ -213,6 +213,7 @@ def texture_from_disk():
 
                     # if remapped
                     if (remap_found == 1):
+                        low_offset, high_offset = -0.5, 0.5
                         ar_height_offset = hou.node(ar_path).createNode("arnold::range", "displacement_remap")
                         ar_height_offset.parm("output_min").set(low_offset)
                         ar_height_offset.parm("output_max").set(high_offset)
@@ -495,6 +496,7 @@ def texture_from_disk():
 
                 if (remap_found == 1):
                     # create offset node set range
+                    low_offset, high_offset = -0.5, 0.5
                     km_height_offset = hou.node(km_path).createNode("mtlxremap")
                     km_height_offset.parm("outlow").set(low_offset)
                     km_height_offset.parm("outhigh").set(high_offset)

@@ -1,4 +1,4 @@
-﻿import hou
+import hou
 import os
 import json
 import custom_utils

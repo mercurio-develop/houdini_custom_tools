@@ -77,3 +77,56 @@ def reset_parm_tuple(parm_tuple, value, autoscope=None, locks=None):
     parm_tuple.set(value)
     if autoscope is not None:
         parm_tuple.setAutoscope(autoscope)
+
+
+def is_inside_locked_library_hda(node) -> bool:
+    """Return True if *node* lives inside a locked non-Embedded library HDA."""
+    cur = node.parent() if node is not None else None
+    while cur is not None:
+        try:
+            if cur.isLockedHDA():
+                defn = cur.type().definition()
+                if defn is not None and defn.libraryFilePath() != "Embedded":
+                    return True
+        except Exception:
+            pass
+        cur = cur.parent()
+    return False
+
+
+def iter_author_nodes(root):
+    """Yield descendant nodes under *root*, skipping locked SideFX/library HDA internals."""
+    if root is None:
+        return
+    for child in root.allSubChildren():
+        if not is_inside_locked_library_hda(child):
+            yield child
+
+
+def set_karma_resolution(karma_node, width: int, height: int) -> tuple[int, int] | None:
+    """Set Karma render resolution safely in Houdini 22 (unlocks & strips autoheight expression on resolutiony)."""
+    if karma_node is None:
+        return None
+    res_mode = karma_node.parm("res_mode")
+    if res_mode is not None:
+        try:
+            res_mode.set("manual")
+        except Exception:
+            pass
+    for pname in ("resolutionx", "resolutiony"):
+        p = karma_node.parm(pname)
+        if p is not None:
+            if p.isLocked():
+                p.lock(False)
+            p.deleteAllKeyframes()
+    res_tuple = karma_node.parmTuple("resolution")
+    if res_tuple is not None:
+        res_tuple.set((int(width), int(height)))
+        return tuple(int(v) for v in res_tuple.eval())
+    px = karma_node.parm("resolutionx") or karma_node.parm("resolutionX")
+    py = karma_node.parm("resolutiony") or karma_node.parm("resolutionY")
+    if px is not None and py is not None:
+        px.set(int(width))
+        py.set(int(height))
+        return (int(px.eval()), int(py.eval()))
+    return None

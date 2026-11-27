@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "package": "houdini_custom_tools",
+  "version_pin": "Houdini 22.0.429",
+  "python_root": "scripts/python",
+  "tools": [
+    {
+      "slug": "lops-asset-builder",
+      "title": "LOPs Asset Builder v3 (Headless USD Component Pipeline)",
+      "module": "tools.lops_asset_builder_v3.asset_builder_engine",
+      "file": "scripts/python/tools/lops_asset_builder_v3/asset_builder_engine.py",
+      "maturity": "lab-tested",
+      "description": "Build Solaris USD component assets (componentgeometry -> stock componentmaterial -> componentoutput writing mtl.usdc) with optional lookdev turntable and Karma nodes.",
+      "functions": ["run_asset_build"],
+      "tags": ["solaris", "usd", "asset-builder", "componentoutput", "mtl.usdc", "lookdev"]
+    },
+    {
+      "slug": "psx-retro-pipeline",
+      "title": "PSX Retro Lookdev & Dither Pipeline",
+      "module": "tools.psx_tools.psx_asset_builder",
+      "file": "scripts/python/tools/psx_tools/psx_asset_builder.py",
+      "maturity": "lab-tested",
+      "description": "End-to-end PS1 retro pipeline: Bayer/error-diffusion dithering, PSX wobble + screen-snap VEX SOP chain, LOPs Asset Builder, and unlocked low-res Karma PSX render settings.",
+      "functions": ["run_psx_asset_build", "apply_psx_to_selected_geo"],
+      "tags": ["psx", "retro", "dither", "vex", "karma", "solaris"]
+    },
+    {
+      "slug": "psx-dither-pure",
+      "title": "PSX Palette Quantization & 9-Kernel Ditherer (hou-free)",
+      "module": "tools.psx_tools.dither",
+      "file": "scripts/python/tools/psx_tools/dither.py",
+      "maturity": "verified",
+      "description": "Pure NumPy/Pillow color quantization and 9 dithering kernels (Bayer, Floyd-Steinberg, JJN, Stucki, Burkes, Sierra, Atkinson) with zero hou dependency.",
+      "functions": ["apply_dithering", "get_dither_matrix"],
+      "tags": ["psx", "dither", "textures", "pure-python", "mw-library-candidate"]
+    },
+    {
+      "slug": "psx-karma-presets",
+      "title": "PSX Karma Low-Res Render Preset (H22 resolutiony unlock)",
+      "module": "tools.psx_tools.karma_presets",
+      "file": "scripts/python/tools/psx_tools/karma_presets.py",
+      "maturity": "lab-tested",
+      "description": "Configure Houdini 22 karmarenderproperties for PSX low-res, box-filter, no-denoise rendering using manual res_mode and unlocked resolutiony.",
+      "functions": ["apply_psx_karma_settings"],
+      "tags": ["karma", "psx", "solaris", "render"]
+    },
+    {
+      "slug": "materialx-standalone-exporter",
+      "title": "Standalone MaterialX & USD Material Exporter",
+      "module": "tools.material_tools.TexToMtlx_USD.materialx_exporter",
+      "file": "scripts/python/tools/material_tools/TexToMtlx_USD/materialx_exporter.py",
+      "maturity": "lab-tested",
+      "description": "Scan PBR/UDIM texture folders and emit MaterialX (.mtlx) documents without requiring Houdini GUI.",
+      "functions": ["MaterialXExporter"],
+      "tags": ["materialx", "mtlx", "usd", "pbr", "udim", "textures"]
+    },
+    {
+      "slug": "usd-primary-discovery",
+      "title": "USD Primary & Role-File Discovery (hou-free)",
+      "module": "modules.usd_discovery",
+      "file": "scripts/python/modules/usd_discovery.py",
+      "maturity": "verified",
+      "description": "Pure-Python KB3D/USD layout detector and primary geometry selector excluding mtl/payload/geo role layers.",
+      "functions": ["is_kb3d_usd_layout", "select_primary_usd_file"],
+      "tags": ["usd", "kb3d", "discovery", "pure-python", "mw-library-candidate"]
+    },
+    {
+      "slug": "texture-path-repair",
+      "title": "Texture Path Repair & Manifest Diff (hou-free)",
+      "module": "modules.texture_path_repair",
+      "file": "scripts/python/modules/texture_path_repair.py",
+      "maturity": "verified",
+      "description": "Pure-Python broken texture path re-rooting and expected-vs-USD material manifest comparison.",
+      "functions": ["find_texture_repair_candidate", "repair_texture_map", "compare_texture_manifests"],
+      "tags": ["textures", "usd", "repair", "manifest", "pure-python", "mw-library-candidate"]
+    },
+    {
+      "slug": "asset-folder-scanner",
+      "title": "Asset Folder Scanner (geo + tex resolution priority)",
+      "module": "modules.asset_folder_scanner",
+      "file": "scripts/python/modules/asset_folder_scanner.py",
+      "maturity": "lab-tested",
+      "description": "Scan asset folders for main geometry, _B/_C variants, and resolution-prioritized texture directories (16k -> 1k).",
+      "functions": ["scan_asset_folder"],
+      "tags": ["scanner", "assets", "variants", "textures"]
+    },
+    {
+      "slug": "houdini-node-utils",
+      "title": "Houdini 22 Safe Node, Karma Resolution & HDA Traversal Helpers",
+      "module": "modules.houdini_node_utils",
+      "file": "scripts/python/modules/houdini_node_utils.py",
+      "maturity": "verified",
+      "description": "Crucible-hardened Houdini 22 helpers: suppress_gc_during_cook, iter_author_nodes (skips locked SideFX HDAs), and set_karma_resolution (unlocks resolutiony).",
+      "functions": ["suppress_gc_during_cook", "iter_author_nodes", "is_inside_locked_library_hda", "set_karma_resolution", "set_parm"],
+      "tags": ["houdini22", "karma", "hda", "gc", "helpers", "mw-library-candidate"]
+    },
+    {
+      "slug": "lop-network-organizer",
+      "title": "Solaris LOP Network Organizer",
+      "module": "tools.lop_network_organizer",
+      "file": "scripts/python/tools/lop_network_organizer.py",
+      "maturity": "lab-tested",
+      "description": "Layout and merge Solaris LOP branches cleanly in /stage.",
+      "functions": ["organize_current_stage"],
+      "tags": ["solaris", "lop", "layout", "organize"]
+    }
+  ]
+}

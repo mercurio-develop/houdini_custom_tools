@@ -129,10 +129,13 @@ def prepare_imported_asset(
         sim_output.setInput(0, name_node)
         parent.layoutChildren()
     except Exception as exc:
-        hou.ui.displayMessage(
-            f"An error happened in prepare imported assets: {exc}",
-            severity=hou.severityType.Error,
-        )
+        if hou.isUIAvailable():
+            hou.ui.displayMessage(
+                f"An error happened in prepare imported assets: {exc}",
+                severity=hou.severityType.Error,
+            )
+        else:
+            raise RuntimeError(f"prepare_imported_asset failed for {name}: {exc}") from exc
 
 
 def _parse_asset_filename(filename: str) -> tuple[str, str]:

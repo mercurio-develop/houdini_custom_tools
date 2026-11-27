@@ -7,9 +7,8 @@ import os
 import hou
 from PySide6 import QtWidgets
 
-from tools.psx_tools.psx_asset_builder import run_psx_asset_build
+from tools.psx_tools.psx_asset_builder import apply_psx_to_selected_geo, run_psx_asset_build
 from tools.psx_tools.psx_config import PSXAssetConfig, PSXBuildConfig
-from tools.psx_tools.psx_sop_pipeline import apply_psx_to_selected_geo
 from tools.psx_tools.texture_process import process_texture_folder
 
 

@@ -24,7 +24,7 @@ def _random_color() -> tuple[hou.Color, hou.Color]:
 def create_organized_net_note(
     asset_name: str,
     nodes_to_layout: list,
-    offset_vector: hou.Vector2 = hou.Vector2(0, 0),
+    offset_vector: hou.Vector2 | None = None,
     create_network_boxes: bool = True,
     category: str | None = None,
 ):
@@ -32,6 +32,9 @@ def create_organized_net_note(
     if not nodes_to_layout:
         print(f"Warning: No nodes provided to organize for {asset_name}")
         return None
+
+    if offset_vector is None:
+        offset_vector = hou.Vector2(0, 0)
 
     parent = nodes_to_layout[0].parent()
 

@@ -44,8 +44,10 @@ vector Pw = @P;
 vector Pl = Pw * cam_inv;
 
 // Simple perspective snap using cam focal and aperture (Karma/GL defaults)
-float focal = chf(cam_path, "focal");
-float aperture = chf(cam_path, "aperture");
+float focal = chf(cam_path + "/focal");
+float aperture = chf(cam_path + "/aperture");
+if (focal <= 1e-6) focal = 50.0;
+if (aperture <= 1e-6) aperture = 41.4214;
 float res = max(ch("snap_size"), 1.0);
 
 float z = -Pl.z;
@@ -56,10 +58,10 @@ vector ndc;
 ndc.x = Pl.x * scale / z;
 ndc.y = Pl.y * scale / z;
 
-// Snap in normalized device space then back
+// Snap in normalized device space then back (VEX uses rint, not round)
 float snap = 2.0 / res;
-ndc.x = round(ndc.x / snap) * snap;
-ndc.y = round(ndc.y / snap) * snap;
+ndc.x = rint(ndc.x / snap) * snap;
+ndc.y = rint(ndc.y / snap) * snap;
 
 Pl.x = ndc.x * z / scale;
 Pl.y = ndc.y * z / scale;
@@ -99,9 +101,9 @@ def create_decimate_node(parent: hou.Node, ratio: float, name: str = "psx_decima
 
 def create_triangulate_node(parent: hou.Node, name: str = "psx_triangulate") -> hou.Node:
     node = parent.createNode("divide", _sanitize(name))
-    node.parm("convex").set(0)
-    node.parm("planar").set(0)
-    node.parm("triangulate").set(1)
+    node.parm("convex").set(1)
+    node.parm("usemaxsides").set(1)
+    node.parm("numsides").set(3)
     return node
 
 
